@@ -503,19 +503,37 @@ function filterTravauxItems(items, query, filterStatus) {
   });
 }
 
-function createTravauxItemRow(item, lot) {
+function createTravauxItemRow(item, lot, isSubtask = false) {
   const totalItem = (Number(item.amountAxel) || 0) + (Number(item.amountAriane) || 0);
   const lotTagHtml = lot ? `<span class="badge-tag" style="background: rgba(14, 165, 233, 0.12); color: #38bdf8; font-size: 0.72rem; margin-left: 6px; padding: 2px 7px; border-radius: 6px;">${lot.icon || '🔨'} ${lot.name.split('(')[0].trim()}</span>` : '';
 
   const tr = document.createElement('tr');
+  tr.dataset.id = item.id;
+  tr.className = (item.reimbursed ? 'row-reimbursed ' : '') + (isSubtask ? 'row-subtask' : 'row-parent-task');
+
+  const reasonHtml = isSubtask
+    ? `<div class="subtask-indent" style="display:flex; align-items:center; gap:6px; padding-left:18px;">
+         <span class="subtask-branch" style="color:var(--text-dim); font-size:1.1rem; line-height:1;">↳</span>
+         <span style="font-weight:600; color:#e2e8f0;">${item.reason}</span>
+         <span class="badge-tag" style="background:rgba(148,163,184,0.12); color:#94a3b8; font-size:0.68rem; padding:1px 6px;">Sous-tâche</span>
+         ${lotTagHtml}
+       </div>`
+    : `<div style="font-weight: 700; color: #ffffff; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+         <span>${item.reason}</span>
+         ${lotTagHtml}
+       </div>`;
+
+  const addSubtaskBtn = !isSubtask
+    ? `<button type="button" class="lcl-actions-btn btn-add-subtask" data-parent-id="${item.id}" title="Ajouter une sous-tâche sous cette ligne">
+         <span style="font-size:0.9rem;">➕</span>
+       </button>`
+    : '';
+
   tr.innerHTML = `
     <td style="white-space: nowrap; font-size:0.85rem;">${formatDateFR(item.date)}</td>
     <td>
-      <div style="font-weight: 700; color: #ffffff; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-        <span>${item.reason}</span>
-        ${lotTagHtml}
-      </div>
-      ${item.notes ? `<div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">${item.notes}</div>` : ''}
+      ${reasonHtml}
+      ${item.notes ? `<div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px; ${isSubtask ? 'padding-left:28px;' : ''}">${item.notes}</div>` : ''}
     </td>
     <td class="text-right font-mono" style="font-weight: 700; color: ${item.amountAxel > 0 ? '#38bdf8' : 'var(--text-dim)'};">
       ${item.amountAxel > 0 ? formatCurrency(item.amountAxel) : '—'}
@@ -533,6 +551,7 @@ function createTravauxItemRow(item, lot) {
     </td>
     <td class="text-center">
       <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+        ${addSubtaskBtn}
         <button type="button" class="lcl-actions-btn btn-edit-trv" data-id="${item.id}" title="Modifier">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         </button>
@@ -589,9 +608,38 @@ function renderTravauxTable(m) {
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="7" class="text-center text-dim" style="padding: 28px;">Aucune dépense travaux ne correspond aux critères de recherche.</td></tr>`;
   } else {
-    for (const item of filtered) {
-      const lot = resolveItemLot(item, m.lots);
-      tbody.appendChild(createTravauxItemRow(item, lot));
+    // Hierarchical sort: parent items followed by their sub-tasks
+    const parentItems = [];
+    const childrenByParent = {};
+    for (const it of filtered) {
+      if (it.parentId) {
+        if (!childrenByParent[it.parentId]) childrenByParent[it.parentId] = [];
+        childrenByParent[it.parentId].push(it);
+      } else {
+        parentItems.push(it);
+      }
+    }
+
+    const ordered = [];
+    for (const p of parentItems) {
+      ordered.push({ item: p, isSubtask: false });
+      if (childrenByParent[p.id]) {
+        for (const ch of childrenByParent[p.id]) {
+          ordered.push({ item: ch, isSubtask: true });
+        }
+        delete childrenByParent[p.id];
+      }
+    }
+    // Any remaining orphans
+    for (const parentId in childrenByParent) {
+      for (const orphan of childrenByParent[parentId]) {
+        ordered.push({ item: orphan, isSubtask: true });
+      }
+    }
+
+    for (const entry of ordered) {
+      const lot = resolveItemLot(entry.item, m.lots);
+      tbody.appendChild(createTravauxItemRow(entry.item, lot, entry.isSubtask));
     }
   }
 
@@ -841,114 +889,48 @@ function renderLclTab(data) {
   renderLclStackedBar(lclTotal);
 }
 
-function renderRevolutExpensesTable() {
-  const tbody = document.getElementById('revolut-expenses-tbody');
-  if (!tbody) return;
-  const catFilter = document.getElementById('filter-rev-cat')?.value || 'all';
-  const payerFilter = document.getElementById('filter-rev-payer')?.value || 'all';
-
-  tbody.innerHTML = '';
-
-  const filtered = (appState.expenses || [])
-    .filter(e => e.account === 'Revolut')
-    .filter(e => catFilter === 'all' || e.category === catFilter)
-    .filter(e => {
-      if (payerFilter === 'all') return true;
-      if (payerFilter.startsWith('Avancé par ')) {
-        const pName = payerFilter.replace('Avancé par ', '');
-        return e.payer === pName;
-      }
-      return e.payer === payerFilter;
-    })
-    .sort((a, b) => b.date.localeCompare(a.date));
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-dim" style="padding: 20px;">Aucune dépense trouvée avec ces filtres</td></tr>`;
-    return;
-  }
-
-  filtered.forEach(e => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${formatDateFR(e.date)}</td>
-      <td><strong>${e.desc}</strong></td>
-      <td><span class="badge-tag" style="background: rgba(139, 92, 246, 0.15); color: #c084fc;">${e.category}</span></td>
-      <td><span class="badge-tag" style="background: rgba(255,255,255,0.06);">${e.payer}</span></td>
-      <td class="text-right font-mono" style="font-weight: 700;">${formatCurrency(e.amount)}</td>
-      <td class="text-center">
-        <button class="delete-btn btn-delete-expense" data-id="${e.id}" title="Supprimer">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        </button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function createEnvelopeCardElement(env, currentMonthPrefix, expenses) {
-  const spent = expenses
-    .filter(e => e.account === 'Revolut' && e.category === env.name && e.date.startsWith(currentMonthPrefix))
-    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-
-  const pct = env.budget > 0 ? (spent / env.budget) * 100 : 0;
-  const remaining = Math.max(0, env.budget - spent);
-  const isOver = spent > env.budget;
-
-  const item = document.createElement('div');
-  item.className = 'envelope-item';
-  item.innerHTML = `
-    <div class="envelope-top">
-      <div class="envelope-name-wrap">
-        <span class="envelope-icon">${env.icon || '📦'}</span>
-        <span class="envelope-name">${env.name}</span>
-      </div>
-      <div class="envelope-numbers">
-        <strong>${formatCurrency(spent)}</strong> / ${formatCurrency(env.budget)}
-      </div>
-    </div>
-    <div class="envelope-progress-bg">
-      <div class="envelope-progress-bar" style="width: ${Math.min(100, pct)}%; background-color: ${isOver ? '#f43f5e' : (env.color || '#8b5cf6')};"></div>
-    </div>
-    <div class="envelope-footer">
-      <span>${pct.toFixed(0)}% consommé</span>
-      <span style="color: ${isOver ? '#f43f5e' : '#10b981'}; font-weight: 600;">
-        ${isOver ? `Dépassement de +${formatCurrency(spent - env.budget)}` : `Reste ${formatCurrency(remaining)}`}
-      </span>
-    </div>
-  `;
-  return item;
-}
-
 function renderRevolutTab(data) {
-  const { revolutBudgetTotal, revolutSpentThisMonth } = data;
+  const revolutBudgetTotal = (appState.revolutEnvelopes || []).reduce((sum, e) => sum + (Number(e.budget) || 0), 0);
   const setEl = (id, val) => {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
   };
   setEl('rev-banner-total', formatCurrency(revolutBudgetTotal));
-  setEl('rev-banner-spent', `Dépensé : ${formatCurrency(revolutSpentThisMonth)} ce mois`);
+  setEl('rev-banner-annual', `${formatCurrency(revolutBudgetTotal * 12)} / an`);
+  setEl('revolut-envelopes-total-display', formatCurrency(revolutBudgetTotal));
+  setEl('revolut-envelopes-p1-total', formatCurrency(revolutBudgetTotal / 2));
+  setEl('revolut-envelopes-p2-total', formatCurrency(revolutBudgetTotal / 2));
 
-  const payerFilter = document.getElementById('filter-rev-payer');
-  if (payerFilter) {
-    const curPayerVal = payerFilter.value || 'all';
-    payerFilter.innerHTML = `
-      <option value="all">Payeur : Tous</option>
-      <option value="Carte Revolut Commune">Carte Revolut Commune</option>
-      ${appState.profiles.map(p => `<option value="${p.name}">Avancé par ${p.name}</option>`).join('')}
-    `;
-    payerFilter.value = curPayerVal;
+  const tbody = document.getElementById('revolut-envelopes-tbody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    (appState.revolutEnvelopes || []).forEach(env => {
+      const b = Number(env.budget) || 0;
+      const half = b / 2;
+      const tr = document.createElement('tr');
+      tr.dataset.id = env.id;
+      tr.innerHTML = `
+        <td>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="envelope-icon" style="font-size:1.15rem;">${env.icon || '📁'}</span>
+            <strong style="color:var(--text-main);">${env.name}</strong>
+          </div>
+        </td>
+        <td class="text-right">
+          <div style="display:inline-flex; align-items:center; gap:4px; justify-content:flex-end;">
+            <input type="number" step="5" min="0" class="input-env-budget font-mono" data-id="${env.id}" value="${b}">
+            <span class="text-dim">€</span>
+          </div>
+        </td>
+        <td class="text-right font-mono text-cyan env-half-p1">${formatCurrency(half)}</td>
+        <td class="text-right font-mono text-violet env-half-p2">${formatCurrency(half)}</td>
+        <td class="text-center">
+          <button type="button" class="btn-icon btn-delete-envelope" data-id="${env.id}" title="Supprimer cette enveloppe">🗑️</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
   }
-
-  const container = document.getElementById('revolut-envelopes-list');
-  if (!container) return;
-  container.innerHTML = '';
-  const currentMonthPrefix = new Date().toISOString().slice(0, 7);
-
-  (appState.revolutEnvelopes || []).forEach(env => {
-    container.appendChild(createEnvelopeCardElement(env, currentMonthPrefix, appState.expenses || []));
-  });
-
-  renderRevolutExpensesTable();
 }
 
 function renderRecentExpensesTable() {
@@ -1344,13 +1326,29 @@ function handleDeleteExpense(target) {
   }
 }
 
+function handleAddSubtask(target) {
+  const parentId = target.dataset.parentId;
+  openTravauxModal(null, parentId);
+}
+
+function handleDeleteEnvelope(target) {
+  const envId = target.dataset.id;
+  if (confirm('Voulez-vous supprimer cette enveloppe budgétaire Revolut ?')) {
+    appState.revolutEnvelopes = (appState.revolutEnvelopes || []).filter(e => e.id !== envId);
+    saveStateImmediate();
+    renderAll();
+  }
+}
+
 const CLICK_DISPATCHERS = [
   { selector: '.btn-toggle-reimbursed', handler: handleToggleReimbursed },
+  { selector: '.btn-add-subtask', handler: handleAddSubtask },
   { selector: '.btn-edit-trv, .btn-edit-travaux', handler: handleEditTrv },
   { selector: '.btn-delete-trv, .btn-delete-travaux', handler: handleDeleteTrv },
   { selector: '.btn-edit-lot', handler: handleEditLot },
   { selector: '.btn-delete-lot', handler: handleDeleteLot },
   { selector: '.btn-delete-lcl', handler: handleDeleteLcl },
+  { selector: '.btn-delete-envelope', handler: handleDeleteEnvelope },
   { selector: '.btn-delete-expense', handler: handleDeleteExpense }
 ];
 
@@ -1358,7 +1356,17 @@ const CLICK_DISPATCHERS = [
 const travauxModal = document.getElementById('travaux-modal');
 const travauxForm = document.getElementById('travaux-form');
 
-function populateTravauxModal(item, modalTitle, lotSelect) {
+function populateTravauxModal(item, parentId, modalTitle, lotSelect, parentSelect) {
+  if (parentSelect) {
+    const allItems = appState.travauxFund?.items || [];
+    const validParents = allItems.filter(x => !item || x.id !== item.id);
+    parentSelect.innerHTML = `
+      <option value="">-- Dépense principale (aucune) --</option>
+      ${validParents.map(p => `<option value="${p.id}">↳ ${p.reason}</option>`).join('')}
+    `;
+    parentSelect.value = item ? (item.parentId || '') : (parentId || '');
+  }
+
   if (item) {
     if (modalTitle) modalTitle.textContent = 'Modifier la dépense travaux';
     document.getElementById('modal-trv-id').value = item.id;
@@ -1370,9 +1378,14 @@ function populateTravauxModal(item, modalTitle, lotSelect) {
     document.getElementById('modal-trv-ariane').value = (Number(item.amountAriane) || 0).toFixed(2);
     document.getElementById('modal-trv-notes').value = item.notes || '';
   } else {
-    if (modalTitle) modalTitle.textContent = 'Ajouter une dépense travaux';
+    const parentObj = parentId ? (appState.travauxFund?.items || []).find(x => x.id === parentId) : null;
+    if (modalTitle) {
+      modalTitle.textContent = parentObj ? `Ajouter une sous-tâche à "${parentObj.reason}"` : 'Ajouter une dépense travaux';
+    }
     document.getElementById('modal-trv-id').value = '';
-    document.getElementById('modal-trv-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('modal-trv-reason').value = '';
+    if (lotSelect && parentObj && parentObj.lotId) lotSelect.value = parentObj.lotId;
+    document.getElementById('modal-trv-date').value = parentObj?.date || new Date().toISOString().slice(0, 10);
     document.getElementById('modal-trv-reimbursed').value = 'false';
     document.getElementById('modal-trv-axel').value = '0.00';
     document.getElementById('modal-trv-ariane').value = '0.00';
@@ -1380,7 +1393,7 @@ function populateTravauxModal(item, modalTitle, lotSelect) {
   }
 }
 
-function openTravauxModal(item = null) {
+function openTravauxModal(item = null, parentId = null) {
   if (!travauxModal || !travauxForm) return;
   travauxForm.reset();
   const modalTitle = document.getElementById('travaux-modal-title');
@@ -1404,7 +1417,8 @@ function openTravauxModal(item = null) {
     ).join('');
   }
 
-  populateTravauxModal(item, modalTitle, lotSelect);
+  const parentSelect = document.getElementById('modal-trv-parent');
+  populateTravauxModal(item, parentId, modalTitle, lotSelect, parentSelect);
   travauxModal.style.display = 'flex';
 }
 
@@ -1509,6 +1523,31 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = calculateBudgets(appState);
       renderTransfersComparison(data);
     }
+    if (e.target.classList.contains('input-env-budget')) {
+      const envId = e.target.dataset.id;
+      const val = parseFloat(e.target.value) || 0;
+      const env = (appState.revolutEnvelopes || []).find(x => x.id === envId);
+      if (env) {
+        env.budget = val;
+        const row = e.target.closest('tr');
+        if (row) {
+          const half1 = row.querySelector('.env-half-p1');
+          const half2 = row.querySelector('.env-half-p2');
+          if (half1) half1.textContent = formatCurrency(val / 2);
+          if (half2) half2.textContent = formatCurrency(val / 2);
+        }
+        saveStateDebounced();
+        const data = calculateBudgets(appState);
+        renderSummaryStrip(data);
+        renderLclVsRevolutDonut(data.lclTotal, data.revolutBudgetTotal);
+        const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setEl('rev-banner-total', formatCurrency(data.revolutBudgetTotal));
+        setEl('rev-banner-annual', `${formatCurrency(data.revolutBudgetTotal * 12)} / an`);
+        setEl('revolut-envelopes-total-display', formatCurrency(data.revolutBudgetTotal));
+        setEl('revolut-envelopes-p1-total', formatCurrency(data.revolutBudgetTotal / 2));
+        setEl('revolut-envelopes-p2-total', formatCurrency(data.revolutBudgetTotal / 2));
+      }
+    }
     if (e.target.classList.contains('profile-name-input')) {
       const p = appState.profiles.find(x => x.id === e.target.dataset.id);
       if (p) {
@@ -1528,8 +1567,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('change', (e) => {
-    if (e.target.classList.contains('transfer-input')) {
+    if (e.target.classList.contains('transfer-input') || e.target.classList.contains('input-env-budget')) {
       saveStateImmediate();
+      if (e.target.classList.contains('input-env-budget')) renderAll();
     }
   });
 
@@ -1779,6 +1819,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const trvId = document.getElementById('modal-trv-id').value;
       const reasonVal = document.getElementById('modal-trv-reason').value.trim();
       const lotIdVal = document.getElementById('modal-trv-lot') ? document.getElementById('modal-trv-lot').value : '';
+      const parentIdVal = document.getElementById('modal-trv-parent') ? document.getElementById('modal-trv-parent').value : '';
       const dateVal = document.getElementById('modal-trv-date').value;
       const reimbursedVal = (document.getElementById('modal-trv-reimbursed').value === 'true');
       const axelVal = parseFloat(document.getElementById('modal-trv-axel').value) || 0;
@@ -1794,6 +1835,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target) {
           target.reason = reasonVal;
           target.lotId = lotIdVal;
+          target.parentId = parentIdVal || null;
           target.date = dateVal;
           target.reimbursed = reimbursedVal;
           target.amountAxel = axelVal;
@@ -1805,6 +1847,7 @@ document.addEventListener('DOMContentLoaded', () => {
           id: 'trv-' + Date.now(),
           reason: reasonVal,
           lotId: lotIdVal,
+          parentId: parentIdVal || null,
           date: dateVal,
           reimbursed: reimbursedVal,
           amountAxel: axelVal,
@@ -1816,6 +1859,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
       saveStateImmediate();
       closeTravauxModal();
+      renderAll();
+    });
+  }
+
+  // Revolut Envelopes Modal
+  const revCatModal = document.getElementById('revolut-cat-modal');
+  const revCatForm = document.getElementById('revolut-cat-form');
+  const btnAddRevCat = document.getElementById('btn-add-revolut-cat');
+  const btnCloseRevCatModal = document.getElementById('btn-close-revolut-cat-modal');
+  const btnCancelRevCatModal = document.getElementById('btn-cancel-revolut-cat-modal');
+
+  if (btnAddRevCat) {
+    btnAddRevCat.addEventListener('click', () => {
+      if (!revCatModal || !revCatForm) return;
+      revCatForm.reset();
+      document.getElementById('modal-rev-cat-id').value = '';
+      document.getElementById('modal-rev-cat-icon').value = '🛒';
+      document.getElementById('modal-rev-cat-budget').value = '100';
+      revCatModal.style.display = 'flex';
+    });
+  }
+  if (btnCloseRevCatModal) btnCloseRevCatModal.addEventListener('click', () => { if (revCatModal) revCatModal.style.display = 'none'; });
+  if (btnCancelRevCatModal) btnCancelRevCatModal.addEventListener('click', () => { if (revCatModal) revCatModal.style.display = 'none'; });
+
+  if (revCatForm) {
+    revCatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('modal-rev-cat-name').value.trim();
+      const budget = parseFloat(document.getElementById('modal-rev-cat-budget').value) || 0;
+      const icon = document.getElementById('modal-rev-cat-icon').value.trim() || '📁';
+      if (!name) return;
+
+      if (!appState.revolutEnvelopes) appState.revolutEnvelopes = [];
+      appState.revolutEnvelopes.push({
+        id: 'rev-cat-' + Date.now(),
+        name,
+        budget,
+        icon,
+        color: '#8b5cf6'
+      });
+      saveStateImmediate();
+      if (revCatModal) revCatModal.style.display = 'none';
       renderAll();
     });
   }

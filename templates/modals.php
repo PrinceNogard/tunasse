@@ -135,6 +135,18 @@ $lots = $state['travauxLots'] ?? [];
             </select>
           </div>
 
+          <div class="form-field">
+            <label for="modal-trv-parent">Rattacher à une tâche parente (Sous-tâche de)</label>
+            <select id="modal-trv-parent" class="custom-select">
+              <option value="">-- Dépense principale (aucune) --</option>
+              <?php foreach ($travauxItems as $it): ?>
+                <?php if (empty($it['parentId'])): ?>
+                  <option value="<?= htmlspecialchars($it['id']) ?>">↳ <?= htmlspecialchars($it['reason']) ?></option>
+                <?php endif; ?>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
           <div class="form-group-row">
             <div class="form-field">
               <label for="modal-trv-date">Date de l'opération</label>
@@ -298,3 +310,38 @@ $lots = $state['travauxLots'] ?? [];
         </form>
       </div>
     </div>
+
+    <!-- Modal: Ajouter / Modifier Enveloppe Revolut -->
+    <div class="modal-backdrop" id="revolut-cat-modal" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 class="modal-title" id="revolut-cat-modal-title">Ajouter une enveloppe Revolut</h3>
+          <button class="modal-close-btn" id="btn-close-revolut-cat-modal">&times;</button>
+        </div>
+        <form id="revolut-cat-form">
+          <input type="hidden" id="modal-rev-cat-id">
+
+          <div class="form-field">
+            <label for="modal-rev-cat-name">Nom de la catégorie / enveloppe</label>
+            <input type="text" id="modal-rev-cat-name" class="custom-input" placeholder="ex: Courses & Alimentation, Animaux..." required>
+          </div>
+
+          <div class="form-group-row">
+            <div class="form-field">
+              <label for="modal-rev-cat-budget">Budget mensuel alloué (€)</label>
+              <input type="number" step="5" min="0" id="modal-rev-cat-budget" class="custom-input font-mono" placeholder="100.00" required>
+            </div>
+            <div class="form-field">
+              <label for="modal-rev-cat-icon">Icône (emoji)</label>
+              <input type="text" id="modal-rev-cat-icon" class="custom-input text-center" value="🛒" maxlength="4">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" id="btn-cancel-revolut-cat-modal">Annuler</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-revolut-cat">Enregistrer l'enveloppe</button>
+          </div>
+        </form>
+      </div>
+    </div>
+

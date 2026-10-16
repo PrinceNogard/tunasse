@@ -17,122 +17,77 @@ $revTotal = $budgets['revolutTotal'] ?? 1155;
           <div class="banner-icon">💳</div>
           <div>
             <h2 class="banner-title">Compte Commun Revolut • Vie Courante</h2>
-            <p class="banner-desc">Suivi dynamique des dépenses quotidiennes : alimentation commune, fluides, sorties & vie du foyer.</p>
+            <p class="banner-desc">Budget prévisionnel des charges courantes du foyer : alimentation, fluides, sorties & intendance commune.</p>
           </div>
           <div class="banner-total">
-            <span class="banner-total-label">Budget Alloué / Mois</span>
+            <span class="banner-total-label">Budget Prévu / Mois</span>
             <span class="banner-total-val text-violet" id="rev-banner-total"><?= Format::currency($revTotal) ?></span>
-            <span class="banner-total-annual" id="rev-banner-spent">Dépensé : <?= Format::currency($revSpent) ?></span>
+            <span class="banner-total-annual" id="rev-banner-annual"><?= Format::currency($revTotal * 12) ?> / an</span>
           </div>
         </div>
 
-        <div class="grid-2-col">
-          <!-- Revolut Budget Envelopes -->
-          <div class="glass-card">
-            <div class="card-header">
-              <div>
-                <h3 class="card-title">Enveloppes Budgétaires Mensuelles</h3>
-                <p class="card-subtitle">Budgets alloués par catégorie pour faire tourner la maison</p>
-              </div>
-              <button class="btn btn-secondary btn-sm" id="btn-add-revolut-cat">
-                + Modifier enveloppes
-              </button>
+        <!-- Revolut Planned Budget Envelopes -->
+        <div class="glass-card mt-6">
+          <div class="card-header">
+            <div>
+              <div class="badge-tag rev-tag mb-2">Prévisionnel Vie Commune</div>
+              <h3 class="card-title">Enveloppes Budgétaires Mensuelles Prévues</h3>
+              <p class="card-subtitle">Lignes de dépenses prévues sur le compte Revolut. Modifiez directement les montants pour ajuster l'enveloppe globale.</p>
             </div>
-
-            <div class="envelope-list" id="revolut-envelopes-list">
-              <?php foreach ($envelopes as $env): 
-                $spentInCat = 0;
-                foreach ($revExpenses as $e) {
-                  if (($e['category'] ?? '') === ($env['name'] ?? '')) {
-                    $spentInCat += (float)($e['amount'] ?? 0);
-                  }
-                }
-                $allocated = (float)($env['allocated'] ?? 0);
-                $pct = $allocated > 0 ? min(100, round(($spentInCat / $allocated) * 100)) : 0;
-              ?>
-                <div class="envelope-card">
-                  <div class="envelope-main">
-                    <span class="envelope-icon"><?= htmlspecialchars($env['icon'] ?? '📁') ?></span>
-                    <div class="envelope-info">
-                      <div class="envelope-name"><?= htmlspecialchars($env['name'] ?? '') ?></div>
-                      <div class="envelope-sub"><?= Format::currency($spentInCat) ?> dépensés sur <?= Format::currency($allocated) ?></div>
-                    </div>
-                    <div class="envelope-target font-mono"><?= Format::currency($allocated) ?></div>
-                  </div>
-                    <div class="envelope-bar-wrap">
-                      <div class="envelope-bar-fill" style="width: <?= (int)$pct ?>%;"></div>
-                    </div>
-                </div>
-              <?php endforeach; ?>
-            </div>
+            <button class="btn btn-primary btn-sm" id="btn-add-revolut-cat">
+              + Nouvelle enveloppe
+            </button>
           </div>
 
-          <!-- Revolut Transactions & Tracker -->
-          <div class="glass-card">
-            <div class="card-header">
-              <div>
-                <h3 class="card-title">Dépenses de Vie Réalisées</h3>
-                <p class="card-subtitle">Saisie et suivi des tickets & sorties du mois</p>
-              </div>
-              <button class="btn btn-primary btn-sm" id="btn-add-revolut-expense">
-                + Nouvelle dépense
-              </button>
-            </div>
-
-            <!-- Filters -->
-            <div class="filter-strip">
-              <select id="filter-rev-cat" class="custom-select">
-                <option value="all">Toutes catégories</option>
-                <option value="Courses & Alimentation">Courses & Alimentation</option>
-                <option value="Charges & Fluides">Charges & Fluides</option>
-                <option value="Sorties & Restos">Sorties & Restos</option>
-                <option value="Maison & Déco">Maison & Déco</option>
-                <option value="Animaux / Divers">Animaux / Divers</option>
-              </select>
-
-              <select id="filter-rev-payer" class="custom-select">
-                <option value="all">Tous les payeurs</option>
-                <option value="<?= htmlspecialchars($p1['name']) ?>"><?= htmlspecialchars($p1['name']) ?></option>
-                <option value="<?= htmlspecialchars($p2['name']) ?>"><?= htmlspecialchars($p2['name']) ?></option>
-              </select>
-            </div>
-
-            <div class="table-responsive mt-3">
-              <table class="custom-table" id="revolut-expenses-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Titre</th>
-                    <th>Catégorie</th>
-                    <th>Payé avec</th>
-                    <th class="text-right">Montant</th>
-                    <th class="text-center">Action</th>
+          <div class="table-responsive mt-3">
+            <table class="custom-table revolut-envelopes-table" id="revolut-envelopes-table">
+              <thead>
+                <tr>
+                  <th>Ligne de Dépense Prévue</th>
+                  <th class="text-right" style="width: 220px;">Budget Alloué / Mois</th>
+                  <th class="text-right">Part <?= htmlspecialchars($p1['name']) ?> (50%)</th>
+                  <th class="text-right">Part <?= htmlspecialchars($p2['name']) ?> (50%)</th>
+                  <th class="text-center" style="width: 100px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="revolut-envelopes-tbody">
+                <?php foreach ($envelopes as $env): 
+                  $b = (float)($env['budget'] ?? 0);
+                  $half = $b / 2.0;
+                ?>
+                  <tr data-id="<?= htmlspecialchars($env['id']) ?>">
+                    <td>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="envelope-icon" style="font-size:1.15rem;"><?= htmlspecialchars($env['icon'] ?? '📁') ?></span>
+                        <strong style="color:var(--text-main);"><?= htmlspecialchars($env['name'] ?? '') ?></strong>
+                      </div>
+                    </td>
+                    <td class="text-right">
+                      <div style="display:inline-flex; align-items:center; gap:4px; justify-content:flex-end;">
+                        <input type="number" step="5" min="0" class="input-env-budget font-mono" data-id="<?= htmlspecialchars($env['id']) ?>" value="<?= (float)$b ?>">
+                        <span class="text-dim">€</span>
+                      </div>
+                    </td>
+                    <td class="text-right font-mono text-cyan env-half-p1"><?= Format::currency($half) ?></td>
+                    <td class="text-right font-mono text-violet env-half-p2"><?= Format::currency($half) ?></td>
+                    <td class="text-center">
+                      <button class="btn-icon btn-delete-envelope" data-id="<?= htmlspecialchars($env['id']) ?>" title="Supprimer cette enveloppe">🗑️</button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody id="revolut-expenses-tbody">
-                  <?php if (empty($revExpenses)): ?>
-                    <tr><td colspan="6" class="text-center text-dim py-4">Aucune dépense Revolut ce mois-ci.</td></tr>
-                  <?php else: ?>
-                    <?php foreach ($revExpenses as $exp): ?>
-                      <tr>
-                        <td class="font-mono text-dim"><?= htmlspecialchars(Format::date($exp['date'] ?? '')) ?></td>
-                        <td><strong><?= htmlspecialchars($exp['description'] ?? '') ?></strong></td>
-                        <td><span class="badge-subtle"><?= htmlspecialchars($exp['category'] ?? '') ?></span></td>
-                        <td>
-                          <span class="badge-tag <?= ($exp['payer'] ?? '') === 'Ariane' ? 'ariane-tag' : 'axel-tag' ?>">
-                            <?= htmlspecialchars($exp['payer'] ?? '') ?>
-                          </span>
-                        </td>
-                        <td class="text-right font-mono font-bold"><?= Format::currency($exp['amount'] ?? 0) ?></td>
-                        <td class="text-center">
-                          <button class="btn-icon btn-delete-expense" data-id="<?= htmlspecialchars($exp['id'] ?? '') ?>" title="Supprimer">🗑️</button>
-                        </td>
-                      </tr>
-                    <?php endforeach; ?>
-                  <?php endif; ?>
-                </tbody>
-              </table>
-            </div>
+                <?php endforeach; ?>
+              </tbody>
+              <tfoot>
+                <tr class="tfoot-total-row" style="font-weight: 800; font-size: 0.95rem;">
+                  <td><strong>TOTAL DU BUDGET MENSUEL REVOLUT</strong></td>
+                  <td class="text-right font-mono text-violet font-bold" id="revolut-envelopes-total-display"><?= Format::currency($revTotal) ?></td>
+                  <td class="text-right font-mono text-cyan" id="revolut-envelopes-p1-total"><?= Format::currency($revTotal / 2.0) ?></td>
+                  <td class="text-right font-mono text-violet" id="revolut-envelopes-p2-total"><?= Format::currency($revTotal / 2.0) ?></td>
+                  <td class="text-center">
+                    <span class="badge-tag" style="background:rgba(139,92,246,0.15); color:#c084fc;">Prévu</span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </div>
       </section>

@@ -117,6 +117,7 @@ export const DEFAULT_STATE = {
         date: '2026-10-11',
         reason: 'Toiture Roman Avance (Frais de bouche)',
         lotId: 'lot-2',
+        parentId: 'trv-1',
         amountAxel: 1000.00,
         amountAriane: 1000.00,
         reimbursed: false,

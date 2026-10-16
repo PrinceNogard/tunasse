@@ -362,16 +362,61 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
                 </tr>
               </thead>
               <tbody id="travaux-tbody">
-                <?php foreach ($travauxItems as $it): 
+                <?php
+                // Build hierarchical structure: main parent tasks first, followed immediately by their sub-tasks
+                $parentItems = [];
+                $childrenByParent = [];
+                foreach ($travauxItems as $it) {
+                    if (!empty($it['parentId'])) {
+                        $childrenByParent[$it['parentId']][] = $it;
+                    } else {
+                        $parentItems[] = $it;
+                    }
+                }
+                $orderedItems = [];
+                foreach ($parentItems as $parent) {
+                    $orderedItems[] = ['item' => $parent, 'isChild' => false];
+                    if (isset($childrenByParent[$parent['id']])) {
+                        foreach ($childrenByParent[$parent['id']] as $child) {
+                            $orderedItems[] = ['item' => $child, 'isChild' => true];
+                        }
+                        unset($childrenByParent[$parent['id']]);
+                    }
+                }
+                foreach ($childrenByParent as $orphans) {
+                    foreach ($orphans as $orphan) {
+                        $orderedItems[] = ['item' => $orphan, 'isChild' => true];
+                    }
+                }
+
+                foreach ($orderedItems as $entry): 
+                  $it = $entry['item'];
+                  $isChild = $entry['isChild'];
                   $itemTotal = (float)($it['amountAxel'] ?? 0) + (float)($it['amountAriane'] ?? 0);
                   $isReimbursed = !empty($it['reimbursed']);
                 ?>
-                  <tr data-id="<?= htmlspecialchars($it['id']) ?>" class="<?= $isReimbursed ? 'row-reimbursed' : '' ?>">
+                  <tr data-id="<?= htmlspecialchars($it['id']) ?>" class="<?= $isReimbursed ? 'row-reimbursed' : '' ?> <?= $isChild ? 'row-subtask' : 'row-parent-task' ?>">
                     <td class="font-mono text-dim"><?= htmlspecialchars(Format::date($it['date'] ?? '')) ?></td>
                     <td>
-                      <strong><?= htmlspecialchars($it['reason'] ?? '') ?></strong>
-                      <?php if (!empty($it['lotId'])): ?>
-                        <span class="badge-subtle ml-2"><?= htmlspecialchars($it['lotId']) ?></span>
+                      <?php if ($isChild): ?>
+                        <div class="subtask-indent" style="display:flex; align-items:center; gap:6px; padding-left: 18px;">
+                          <span class="subtask-branch" style="color:var(--text-dim); font-size:1.1rem; line-height:1;">↳</span>
+                          <strong><?= htmlspecialchars($it['reason'] ?? '') ?></strong>
+                          <span class="badge-tag" style="background:rgba(148,163,184,0.12); color:#94a3b8; font-size:0.68rem; padding:1px 6px;">Sous-tâche</span>
+                          <?php if (!empty($it['lotId'])): ?>
+                            <span class="badge-subtle ml-1"><?= htmlspecialchars($it['lotId']) ?></span>
+                          <?php endif; ?>
+                        </div>
+                      <?php else: ?>
+                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                          <strong><?= htmlspecialchars($it['reason'] ?? '') ?></strong>
+                          <?php if (!empty($it['lotId'])): ?>
+                            <span class="badge-subtle ml-1"><?= htmlspecialchars($it['lotId']) ?></span>
+                          <?php endif; ?>
+                        </div>
+                      <?php endif; ?>
+                      <?php if (!empty($it['notes'])): ?>
+                        <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px; <?= $isChild ? 'padding-left: 28px;' : '' ?>"><?= htmlspecialchars($it['notes']) ?></div>
                       <?php endif; ?>
                     </td>
                     <td class="text-right font-mono text-cyan"><?= (float)($it['amountAxel'] ?? 0) > 0 ? Format::currency($it['amountAxel']) : '—' ?></td>
@@ -383,6 +428,9 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
                       </button>
                     </td>
                     <td class="text-center">
+                      <?php if (!$isChild): ?>
+                        <button class="btn-icon btn-add-subtask" data-parent-id="<?= htmlspecialchars($it['id']) ?>" title="Ajouter une sous-tâche sous cette ligne">➕</button>
+                      <?php endif; ?>
                       <button class="btn-icon btn-edit-travaux" data-id="<?= htmlspecialchars($it['id']) ?>" title="Modifier">✏️</button>
                       <button class="btn-icon btn-delete-travaux" data-id="<?= htmlspecialchars($it['id']) ?>" title="Supprimer">🗑️</button>
                     </td>

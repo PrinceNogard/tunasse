@@ -839,78 +839,54 @@
           <div class="banner-icon">💳</div>
           <div>
             <h2 class="banner-title">Compte Commun Revolut • Vie Courante</h2>
-            <p class="banner-desc">Suivi dynamique des dépenses quotidiennes : alimentation commune, fluides, sorties & vie du foyer.</p>
+            <p class="banner-desc">Budget prévisionnel des charges courantes du foyer : alimentation, fluides, sorties & intendance commune.</p>
           </div>
           <div class="banner-total">
-            <span class="banner-total-label">Budget Alloué / Mois</span>
-            <span class="banner-total-val text-violet" id="rev-banner-total">0,00 €</span>
-            <span class="banner-total-annual" id="rev-banner-spent">Dépensé : 0,00 €</span>
+            <span class="banner-total-label">Budget Prévu / Mois</span>
+            <span class="banner-total-val text-violet" id="rev-banner-total">900,00 €</span>
+            <span class="banner-total-annual" id="rev-banner-annual">10 800,00 € / an</span>
           </div>
         </div>
 
-        <div class="grid-2-col">
-          <!-- Revolut Budget Envelopes -->
-          <div class="glass-card">
-            <div class="card-header">
-              <div>
-                <h3 class="card-title">Enveloppes Budgétaires Mensuelles</h3>
-                <p class="card-subtitle">Budgets alloués par catégorie pour faire tourner la maison</p>
-              </div>
-              <button class="btn btn-secondary btn-sm" id="btn-add-revolut-cat">
-                + Modifier enveloppes
-              </button>
+        <!-- Revolut Planned Budget Envelopes -->
+        <div class="glass-card mt-6">
+          <div class="card-header">
+            <div>
+              <div class="badge-tag rev-tag mb-2">Prévisionnel Vie Commune</div>
+              <h3 class="card-title">Enveloppes Budgétaires Mensuelles Prévues</h3>
+              <p class="card-subtitle">Lignes de dépenses prévues sur le compte Revolut. Modifiez directement les montants pour ajuster l'enveloppe globale.</p>
             </div>
-
-            <div class="envelope-list" id="revolut-envelopes-list">
-              <!-- Populated via JS -->
-            </div>
+            <button class="btn btn-primary btn-sm" id="btn-add-revolut-cat">
+              + Nouvelle enveloppe
+            </button>
           </div>
 
-          <!-- Revolut Transactions & Tracker -->
-          <div class="glass-card">
-            <div class="card-header">
-              <div>
-                <h3 class="card-title">Dépenses de Vie Réalisées</h3>
-                <p class="card-subtitle">Saisie et suivi des tickets & sorties du mois</p>
-              </div>
-              <button class="btn btn-primary btn-sm" id="btn-add-revolut-expense">
-                + Nouvelle dépense
-              </button>
-            </div>
-
-            <!-- Filters -->
-            <div class="filter-strip">
-              <select id="filter-rev-cat" class="custom-select">
-                <option value="all">Toutes catégories</option>
-                <option value="Courses & Alimentation">Courses & Alimentation</option>
-                <option value="Charges & Fluides">Charges & Fluides</option>
-                <option value="Sorties & Restos">Sorties & Restos</option>
-                <option value="Maison & Déco">Maison & Déco</option>
-                <option value="Animaux / Divers">Animaux / Divers</option>
-              </select>
-
-              <select id="filter-rev-payer" class="custom-select">
-                <!-- Populated dynamically via profiles -->
-              </select>
-            </div>
-
-            <div class="table-responsive mt-3">
-              <table class="custom-table" id="revolut-expenses-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Titre</th>
-                    <th>Catégorie</th>
-                    <th>Payé avec</th>
-                    <th class="text-right">Montant</th>
-                    <th class="text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody id="revolut-expenses-tbody">
-                  <!-- Populated via JS -->
-                </tbody>
-              </table>
-            </div>
+          <div class="table-responsive mt-3">
+            <table class="custom-table revolut-envelopes-table" id="revolut-envelopes-table">
+              <thead>
+                <tr>
+                  <th>Ligne de Dépense Prévue</th>
+                  <th class="text-right" style="width: 220px;">Budget Alloué / Mois</th>
+                  <th class="text-right">Part Axel (50%)</th>
+                  <th class="text-right">Part Ariane (50%)</th>
+                  <th class="text-center" style="width: 100px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="revolut-envelopes-tbody">
+                <!-- Populated via JS -->
+              </tbody>
+              <tfoot>
+                <tr class="tfoot-total-row" style="font-weight: 800; font-size: 0.95rem;">
+                  <td><strong>TOTAL DU BUDGET MENSUEL REVOLUT</strong></td>
+                  <td class="text-right font-mono text-violet font-bold" id="revolut-envelopes-total-display">900,00 €</td>
+                  <td class="text-right font-mono text-cyan" id="revolut-envelopes-p1-total">450,00 €</td>
+                  <td class="text-right font-mono text-violet" id="revolut-envelopes-p2-total">450,00 €</td>
+                  <td class="text-center">
+                    <span class="badge-tag" style="background:rgba(139,92,246,0.15); color:#c084fc;">Prévu</span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </div>
       </section>
@@ -1440,6 +1416,14 @@
             </select>
           </div>
 
+          <div class="form-field">
+            <label for="modal-trv-parent">Rattacher à une tâche parente (Sous-tâche de)</label>
+            <select id="modal-trv-parent" class="custom-select">
+              <option value="">-- Dépense principale (aucune) --</option>
+              <!-- Populated dynamically via JS -->
+            </select>
+          </div>
+
           <div class="form-group-row">
             <div class="form-field">
               <label for="modal-trv-date">Date de l'opération</label>
@@ -1554,6 +1538,38 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-ghost" id="btn-cancel-lot-modal">Annuler</button>
             <button type="submit" class="btn btn-primary" id="btn-save-lot">Enregistrer le lot</button>
+          </div>
+        </form>
+      </div>
+    <!-- Modal: Ajouter / Modifier Enveloppe Revolut -->
+    <div class="modal-backdrop" id="revolut-cat-modal" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 class="modal-title" id="revolut-cat-modal-title">Ajouter une enveloppe Revolut</h3>
+          <button class="modal-close-btn" id="btn-close-revolut-cat-modal">&times;</button>
+        </div>
+        <form id="revolut-cat-form">
+          <input type="hidden" id="modal-rev-cat-id">
+
+          <div class="form-field">
+            <label for="modal-rev-cat-name">Nom de la catégorie / enveloppe</label>
+            <input type="text" id="modal-rev-cat-name" class="custom-input" placeholder="ex: Courses & Alimentation, Animaux..." required>
+          </div>
+
+          <div class="form-group-row">
+            <div class="form-field">
+              <label for="modal-rev-cat-budget">Budget mensuel alloué (€)</label>
+              <input type="number" step="5" min="0" id="modal-rev-cat-budget" class="custom-input font-mono" placeholder="100.00" required>
+            </div>
+            <div class="form-field">
+              <label for="modal-rev-cat-icon">Icône (emoji)</label>
+              <input type="text" id="modal-rev-cat-icon" class="custom-input text-center" value="🛒" maxlength="4">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" id="btn-cancel-revolut-cat-modal">Annuler</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-revolut-cat">Enregistrer l'enveloppe</button>
           </div>
         </form>
       </div>

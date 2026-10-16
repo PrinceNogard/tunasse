@@ -21,8 +21,8 @@
     "actualTransfers": {
         "p1Lcl": 760.44,
         "p2Lcl": 621.56,
-        "p1Rev": 450.00,
-        "p2Rev": 450.00
+        "p1Rev": 450,
+        "p2Rev": 450
     },
     "simulator": {
         "totalGift": 25000,
@@ -111,6 +111,7 @@
                 "date": "2026-10-11",
                 "reason": "Toiture Roman Avance (Frais de bouche)",
                 "lotId": "lot-2",
+                "parentId": "trv-1",
                 "amountAxel": 1000,
                 "amountAriane": 1000,
                 "reimbursed": false,
