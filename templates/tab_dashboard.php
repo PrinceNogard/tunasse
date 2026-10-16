@@ -177,6 +177,56 @@ $recentExpenses = array_slice(array_reverse($state['expenses'] ?? []), 0, 8);
           </div>
         </div>
 
+        <!-- Synthèse : Virements Automatiques Mensuels Programmés (LCL & Revolut) -->
+        <div class="glass-card mt-6">
+          <div class="card-header">
+            <div>
+              <div class="badge-amber mb-2">Fonctionnement Récurrent Estimé</div>
+              <h2 class="card-title">Virements Automatiques Mensuels Programmés</h2>
+              <p class="card-subtitle">Ce qu'<?= htmlspecialchars($p1['name']) ?> et <?= htmlspecialchars($p2['name']) ?> mettent chaque mois de manière automatique sur le compte LCL et le compte Revolut</p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-quick-expense-banner">
+              + Ajouter une dépense
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Compte Destinataire</th>
+                  <th>Affectation / Type de charges</th>
+                  <th class="text-right">Alimentation Totale</th>
+                  <th class="text-right" style="color:<?= htmlspecialchars($p1['color']) ?>;">Virement <?= htmlspecialchars($p1['name']) ?></th>
+                  <th class="text-right" style="color:<?= htmlspecialchars($p2['color']) ?>;">Virement <?= htmlspecialchars($p2['name']) ?></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="bank-tag lcl-tag">LCL</span> <strong>Compte Joint LCL</strong></td>
+                  <td class="text-dim">Package Logement Fixe (Prêt bancaire, assurances, taxe foncière, charges)</td>
+                  <td class="text-right font-mono font-bold text-cyan"><?= Format::currency($budgets['lclTotal'] ?? 1382) ?></td>
+                  <td class="text-right font-mono text-cyan" id="auto-lcl-p1"><?= Format::currency($p1Contrib['lcl'] ?? 760.44) ?></td>
+                  <td class="text-right font-mono text-cyan" id="auto-lcl-p2"><?= Format::currency($p2Contrib['lcl'] ?? 621.56) ?></td>
+                </tr>
+                <tr>
+                  <td><span class="bank-tag rev-tag">Revolut</span> <strong>Compte Commun Revolut</strong></td>
+                  <td class="text-dim">Vie Courante & Foyer (Courses alimentaires, abonnements, sorties, imprévus)</td>
+                  <td class="text-right font-mono font-bold text-violet"><?= Format::currency($budgets['revolutTotal'] ?? 900) ?></td>
+                  <td class="text-right font-mono text-violet" id="auto-rev-p1"><?= Format::currency($p1Contrib['rev'] ?? 450) ?></td>
+                  <td class="text-right font-mono text-violet" id="auto-rev-p2"><?= Format::currency($p2Contrib['rev'] ?? 450) ?></td>
+                </tr>
+                <tr style="background:rgba(255,255,255,0.02); font-weight:700;">
+                  <td colspan="2"><strong>TOTAL DES VIREMENTS AUTOMATIQUES MENSUELS</strong></td>
+                  <td class="text-right font-mono font-bold text-emerald"><?= Format::currency($budgets['totalMonthly'] ?? 2282) ?></td>
+                  <td class="text-right font-mono font-bold text-emerald" id="auto-total-p1"><?= Format::currency($p1Contrib['total'] ?? 1210.44) ?></td>
+                  <td class="text-right font-mono font-bold text-emerald" id="auto-total-p2"><?= Format::currency($p2Contrib['total'] ?? 1071.56) ?></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Travaux Quick Snapshot in Dashboard -->
         <div class="glass-card mt-6 clickable" id="dash-travaux-card" title="Cliquez pour ouvrir l'enveloppe travaux">
           <div class="card-header">

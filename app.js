@@ -1068,6 +1068,14 @@ function renderSummaryStrip(data) {
   setEl('top-revolut-budget', formatCurrency(revolutBudgetTotal));
   setEl('top-revolut-spent', `${formatCurrency(revolutSpentThisMonth || 0)} dépensés ce mois`);
 
+  // Update Automatic Transfers Table cells
+  setEl('auto-lcl-p1', formatCurrency(data.p1Contrib?.lcl || 0));
+  setEl('auto-lcl-p2', formatCurrency(data.p2Contrib?.lcl || 0));
+  setEl('auto-rev-p1', formatCurrency(data.p1Contrib?.rev || 0));
+  setEl('auto-rev-p2', formatCurrency(data.p2Contrib?.rev || 0));
+  setEl('auto-total-p1', formatCurrency(data.p1Contrib?.total || 0));
+  setEl('auto-total-p2', formatCurrency(data.p2Contrib?.total || 0));
+
   const p1 = appState.profiles[0];
   const p2 = appState.profiles[1];
   const strip = document.getElementById('header-profiles-display');
@@ -1611,6 +1619,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (expenseModal) expenseModal.style.display = 'none';
   }
 
+  const btnBannerExpense = document.getElementById('btn-quick-expense-banner');
+  if (btnBannerExpense) btnBannerExpense.addEventListener('click', () => openExpenseModal());
   if (btnQuickExpense) btnQuickExpense.addEventListener('click', () => openExpenseModal());
   if (btnAddRevExpense) btnAddRevExpense.addEventListener('click', () => openExpenseModal('Revolut'));
   if (btnCloseExpenseModal) btnCloseExpenseModal.addEventListener('click', closeExpenseModal);
