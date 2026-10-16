@@ -15,15 +15,7 @@ $p2 = $state['profiles'][1] ?? ['name' => 'Ariane', 'initials' => 'AR', 'color' 
         <div>
           <h1 class="brand-title">DuoBudget</h1>
           <div class="header-profiles-strip" id="header-profiles-display">
-            <div class="profile-chip">
-              <span class="chip-avatar" style="background:<?= htmlspecialchars($p1['color']) ?>"><?= htmlspecialchars($p1['initials']) ?></span>
-              <span><?= htmlspecialchars($p1['name']) ?></span>
-            </div>
-            <span class="chip-sep">&</span>
-            <div class="profile-chip">
-              <span class="chip-avatar" style="background:<?= htmlspecialchars($p2['color']) ?>"><?= htmlspecialchars($p2['initials']) ?></span>
-              <span><?= htmlspecialchars($p2['name']) ?></span>
-            </div>
+            <span class="header-couple-names"><?= htmlspecialchars($p1['name']) ?> & <?= htmlspecialchars($p2['name']) ?></span>
           </div>
         </div>
       </div>
@@ -50,9 +42,6 @@ $p2 = $state['profiles'][1] ?? ['name' => 'Ariane', 'initials' => 'AR', 'color' 
       </nav>
 
       <div class="header-actions">
-        <a href="tests/runner.html" class="btn btn-secondary btn-sm" id="btn-tests-runner" title="Lancer la suite de tests unitaires automatisée">
-          Tests (40/40)
-        </a>
         <a href="api.php?action=export_json" class="btn btn-secondary btn-sm" id="btn-export-data" title="Sauvegarder les données en JSON">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export

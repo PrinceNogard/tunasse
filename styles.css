@@ -132,7 +132,14 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 3px;
+  margin-top: 2px;
+}
+
+.header-couple-names {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 .header-profile-tag {

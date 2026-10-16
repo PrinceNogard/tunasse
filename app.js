@@ -1080,17 +1080,7 @@ function renderSummaryStrip(data) {
   const p2 = appState.profiles[1];
   const strip = document.getElementById('header-profiles-display');
   if (strip && p1 && p2) {
-    strip.innerHTML = `
-      <div class="profile-chip">
-        <span class="chip-avatar" style="background:${p1.color}">${p1.initials || 'P1'}</span>
-        <span>${p1.name}</span>
-      </div>
-      <span class="chip-sep">&</span>
-      <div class="profile-chip">
-        <span class="chip-avatar" style="background:${p2.color}">${p2.initials || 'P2'}</span>
-        <span>${p2.name}</span>
-      </div>
-    `;
+    strip.innerHTML = `<span class="header-couple-names">${p1.name} & ${p2.name}</span>`;
   }
 }
 
