@@ -144,6 +144,27 @@ $reloaded = $store->load();
 MiniAssert::same('income', $reloaded['splitRule'], 'JsonStore persistence verified');
 @unlink($testStorePath);
 
+// 7. Automated Banking (GoCardless Client) Tests
+echo "\n▶ Automated Banking (GoCardless DSP2) Tests:\n";
+$bankClient = new \Tunasse\Banking\GoCardlessClient();
+MiniAssert::true(!$bankClient->isConfigured(), 'Client correctly unconfigured by default');
+$req = $bankClient->createRequisition(\Tunasse\Banking\GoCardlessClient::INSTITUTION_LCL, 'http://127.0.0.1/callback', 'test_ref');
+MiniAssert::true(!empty($req['link']), 'Requisition generates valid authorization link');
+MiniAssert::same(\Tunasse\Banking\GoCardlessClient::INSTITUTION_LCL, $req['institution_id'], 'Requisition targets LCL');
+$balances = $bankClient->getAccountBalances('sim_acc_lcl_01');
+MiniAssert::same('1450.20', $balances['balances'][0]['balanceAmount']['amount'], 'Balances correctly retrieved');
+$testState = [
+    'banking' => [
+        'accounts' => [
+            ['id' => 'sim_acc_lcl_01', 'name' => 'Compte LCL', 'institution_id' => 'LCL_FR_CL42']
+        ]
+    ]
+];
+$syncRes = $bankClient->syncAll($testState);
+MiniAssert::same(1, $syncRes['synced_accounts'], 'SyncAll updates registered accounts');
+MiniAssert::floatNear(1450.20, (float)$testState['banking']['accounts'][0]['last_balance'], 0.01, 'Account live balance updated');
+
+
 echo "\n" . str_repeat('=', 40) . "\n";
 echo "Tests Passed: " . MiniAssert::$passed . "\n";
 echo "Tests Failed: " . MiniAssert::$failed . "\n";

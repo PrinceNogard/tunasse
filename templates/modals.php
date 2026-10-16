@@ -253,3 +253,48 @@ $lots = $state['travauxLots'] ?? [];
         </form>
       </div>
     </div>
+
+    <!-- MODAL: GOCARDLESS OPEN BANKING API CONFIGURATION -->
+    <div class="modal-backdrop" id="banking-modal" style="display: none;">
+      <div class="modal-card" style="max-width: 580px;">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Synchronisation Bancaire Automatique (DSP2)</h3>
+            <p class="modal-subtitle" style="font-size:0.8rem; color:var(--text-dim); margin-top:2px;">Connexion directe Open Banking LCL & Revolut via GoCardless</p>
+          </div>
+          <button class="modal-close-btn" id="btn-close-banking-modal">&times;</button>
+        </div>
+        <form id="banking-config-form">
+          <div class="banking-notice-box" style="background:rgba(14,165,233,0.06); border:1px solid rgba(14,165,233,0.2); border-radius:8px; padding:12px; margin-bottom:16px;">
+            <p style="font-size:0.82rem; color:var(--text-main); margin-bottom:6px;">
+              <strong>Comment obtenir vos identifiants gratuits ?</strong>
+            </p>
+            <ol style="font-size:0.78rem; color:var(--text-muted); margin-left:18px; line-height:1.5;">
+              <li>Créez un compte gratuit sur <a href="https://bankaccountdata.gocardless.com/overview/" target="_blank" rel="noopener" style="color:var(--accent-blue); text-decoration:underline;">GoCardless Bank Account Data</a>.</li>
+              <li>Allez dans <em>User Secrets</em> et générez un <strong>Secret ID</strong> et un <strong>Secret Key</strong>.</li>
+              <li>Collez-les ci-dessous. Vos identifiants restent stockés localement sur votre serveur.</li>
+            </ol>
+          </div>
+
+          <div class="form-field">
+            <label for="banking-secret-id">Secret ID GoCardless</label>
+            <input type="text" id="banking-secret-id" class="custom-input font-mono" placeholder="ex: 12345678-abcd-ef01-2345-6789abcdef01" required>
+          </div>
+
+          <div class="form-field">
+            <label for="banking-secret-key">Secret Key GoCardless</label>
+            <input type="password" id="banking-secret-key" class="custom-input font-mono" placeholder="••••••••••••••••••••••••••••••••" required>
+          </div>
+
+          <div class="modal-footer" style="justify-content:space-between; align-items:center;">
+            <button type="button" class="btn btn-ghost" id="btn-banking-demo-mode" title="Tester immédiatement sans clés">
+              ⚡ Mode Démo Direct
+            </button>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn btn-ghost" id="btn-cancel-banking-modal">Fermer</button>
+              <button type="submit" class="btn btn-primary" id="btn-save-banking-keys">Enregistrer les clés</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>

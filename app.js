@@ -1020,7 +1020,40 @@ function renderProfilesTab() {
   const rIncome = document.getElementById('rule-income');
   if (r50) r50.checked = (appState.splitRule === '50');
   if (rIncome) rIncome.checked = (appState.splitRule === 'income');
+
+  updateBankingStatusUI();
 }
+
+function updateBankingStatusUI() {
+  const banking = appState.banking || {};
+  const accounts = banking.accounts || [];
+  const lclAcc = accounts.find(a => (a.institution_id || '').includes('LCL') || (a.institution || '') === 'lcl');
+  const revAcc = accounts.find(a => (a.institution_id || '').includes('REVOLUT') || (a.institution || '') === 'revolut');
+
+  const lclStatus = document.getElementById('banking-status-lcl');
+  if (lclStatus) {
+    if (lclAcc && lclAcc.status === 'connected') {
+      lclStatus.innerHTML = `<span class="text-emerald" style="font-weight:600;">● Connecté</span> (${formatCurrency(lclAcc.last_balance || 0)})`;
+    } else {
+      lclStatus.textContent = 'Non connecté';
+    }
+  }
+
+  const revStatus = document.getElementById('banking-status-revolut');
+  if (revStatus) {
+    if (revAcc && revAcc.status === 'connected') {
+      revStatus.innerHTML = `<span class="text-emerald" style="font-weight:600;">● Connecté</span> (${formatCurrency(revAcc.last_balance || 0)})`;
+    } else {
+      revStatus.textContent = 'Non connecté';
+    }
+  }
+
+  const lastSyncEl = document.getElementById('banking-last-sync-display');
+  if (lastSyncEl) {
+    lastSyncEl.textContent = banking.last_global_sync || 'Jamais';
+  }
+}
+
 
 function renderSummaryStrip(data) {
   const { globalMonthlyBudget, globalAnnualBudget, lclTotal, revolutBudgetTotal, revolutSpentThisMonth } = data;
@@ -1830,6 +1863,124 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAll();
         alert('Application réinitialisée avec succès !');
       }
+    });
+  }
+
+  // --- Open Banking (DSP2) Event Listeners ---
+  const btnOpenBanking = document.getElementById('btn-open-banking-config');
+  const modalBanking = document.getElementById('banking-modal');
+  const btnCloseBanking = document.getElementById('btn-close-banking-modal');
+  const btnCancelBanking = document.getElementById('btn-cancel-banking-modal');
+
+  if (btnOpenBanking) {
+    btnOpenBanking.addEventListener('click', () => {
+      const secretIdInput = document.getElementById('banking-secret-id');
+      const secretKeyInput = document.getElementById('banking-secret-key');
+      if (secretIdInput) secretIdInput.value = appState.banking?.secret_id || '';
+      if (secretKeyInput) secretKeyInput.value = appState.banking?.secret_key || '';
+      if (modalBanking) modalBanking.style.display = 'flex';
+    });
+  }
+
+  if (btnCloseBanking) {
+    btnCloseBanking.addEventListener('click', () => {
+      if (modalBanking) modalBanking.style.display = 'none';
+    });
+  }
+
+  if (btnCancelBanking) {
+    btnCancelBanking.addEventListener('click', () => {
+      if (modalBanking) modalBanking.style.display = 'none';
+    });
+  }
+
+  const bankingForm = document.getElementById('banking-config-form');
+  if (bankingForm) {
+    bankingForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const sId = document.getElementById('banking-secret-id').value.trim();
+      const sKey = document.getElementById('banking-secret-key').value.trim();
+      if (!appState.banking) appState.banking = {};
+      appState.banking.secret_id = sId;
+      appState.banking.secret_key = sKey;
+      saveStateImmediate();
+      try {
+        await fetch('api.php?action=banking_configure', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ secret_id: sId, secret_key: sKey })
+        });
+        alert('Clés Open Banking enregistrées avec succès !');
+        if (modalBanking) modalBanking.style.display = 'none';
+        renderAll();
+      } catch (err) {
+        alert('Erreur enregistrement clés : ' + err.message);
+      }
+    });
+  }
+
+  const connectBank = async (inst) => {
+    try {
+      const res = await fetch('api.php?action=banking_connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ institution: inst })
+      });
+      const data = await res.json();
+      if (data.success && data.link) {
+        window.location.href = data.link;
+      } else {
+        alert('Erreur connexion ' + inst.toUpperCase() + ' : ' + (data.error || 'Lien indisponible'));
+      }
+    } catch (err) {
+      alert('Erreur réseau: ' + err.message);
+    }
+  };
+
+  const btnConnLcl = document.getElementById('btn-connect-lcl');
+  if (btnConnLcl) btnConnLcl.addEventListener('click', () => connectBank('lcl'));
+
+  const btnConnRev = document.getElementById('btn-connect-revolut');
+  if (btnConnRev) btnConnRev.addEventListener('click', () => connectBank('revolut'));
+
+  const btnTriggerSync = document.getElementById('btn-trigger-bank-sync');
+  if (btnTriggerSync) {
+    btnTriggerSync.addEventListener('click', async () => {
+      btnTriggerSync.disabled = true;
+      btnTriggerSync.textContent = '⟳ Synchronisation en cours...';
+      try {
+        const res = await fetch('api.php?action=banking_sync', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          if (data.banking) appState.banking = data.banking;
+          saveStateImmediate();
+          renderAll();
+          alert('Synchronisation bancaire terminée avec succès !');
+        } else {
+          alert('Erreur de synchronisation: ' + (data.error || 'Échec'));
+        }
+      } catch (err) {
+        alert('Erreur réseau: ' + err.message);
+      } finally {
+        btnTriggerSync.disabled = false;
+        btnTriggerSync.textContent = '⟳ Synchroniser maintenant';
+      }
+    });
+  }
+
+  const btnDemo = document.getElementById('btn-banking-demo-mode');
+  if (btnDemo) {
+    btnDemo.addEventListener('click', () => {
+      if (!appState.banking) appState.banking = {};
+      appState.banking.accounts = [
+        { id: 'sim_acc_lcl_01', name: 'Compte Courant LCL', institution: 'lcl', institution_id: 'LCL_FR_CL42', status: 'connected', last_balance: 1450.20, last_sync: new Date().toISOString().replace('T', ' ').slice(0, 19) },
+        { id: 'sim_acc_rev_02', name: 'Carte Commune Revolut', institution: 'revolut', institution_id: 'REVOLUT_REVOFR22', status: 'connected', last_balance: 620.40, last_sync: new Date().toISOString().replace('T', ' ').slice(0, 19) }
+      ];
+      appState.banking.last_global_sync = new Date().toISOString().replace('T', ' ').slice(0, 19);
+      saveStateImmediate();
+      if (modalBanking) modalBanking.style.display = 'none';
+      renderAll();
+      alert('Mode Démo activé : Les comptes LCL (1 450,20 €) et Revolut (620,40 €) sont maintenant connectés et synchronisés !');
     });
   }
 });

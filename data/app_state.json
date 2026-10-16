@@ -282,5 +282,13 @@
             "category": "Prêt & Patrimoine",
             "payer": "Compte LCL"
         }
-    ]
+    ],
+    "banking": {
+        "provider": "gocardless",
+        "secret_id": "",
+        "secret_key": "",
+        "accounts": [],
+        "requisitions": [],
+        "last_global_sync": "2026-10-16 16:56:59"
+    }
 }

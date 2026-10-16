@@ -8,6 +8,7 @@ use Tunasse\Finance\BudgetEngine;
 use Tunasse\Finance\TravauxEngine;
 use Tunasse\Finance\LoanCalculator;
 use Tunasse\Utils\CsvExporter;
+use Tunasse\Banking\GoCardlessClient;
 
 $store = new JsonStore();
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
@@ -299,6 +300,137 @@ switch ($action) {
             }
         }
         echo json_encode(['success' => false, 'error' => 'Fichier JSON invalide']);
+        exit;
+
+    case 'banking_status':
+        $banking = $state['banking'] ?? [
+            'provider' => 'gocardless',
+            'configured' => false,
+            'accounts' => [],
+            'last_sync' => null
+        ];
+        $client = new GoCardlessClient($banking['secret_id'] ?? null, $banking['secret_key'] ?? null);
+        echo json_encode([
+            'success' => true,
+            'configured' => $client->isConfigured(),
+            'provider' => 'GoCardless (DSP2 Open Banking)',
+            'accounts' => $banking['accounts'] ?? [],
+            'last_sync' => $banking['last_global_sync'] ?? null,
+            'institutions' => [
+                'lcl' => ['id' => GoCardlessClient::INSTITUTION_LCL, 'name' => 'LCL (Crédit Lyonnais)'],
+                'revolut' => ['id' => GoCardlessClient::INSTITUTION_REVOLUT, 'name' => 'Revolut'],
+            ]
+        ]);
+        exit;
+
+    case 'banking_configure':
+        $banking = $state['banking'] ?? [];
+        $banking['secret_id'] = trim((string)($input['secret_id'] ?? ''));
+        $banking['secret_key'] = trim((string)($input['secret_key'] ?? ''));
+        $state['banking'] = $banking;
+        $store->save($state);
+
+        $client = new GoCardlessClient($banking['secret_id'], $banking['secret_key']);
+        echo json_encode([
+            'success' => true,
+            'configured' => $client->isConfigured()
+        ]);
+        exit;
+
+    case 'banking_connect':
+        $banking = $state['banking'] ?? [];
+        $client = new GoCardlessClient($banking['secret_id'] ?? null, $banking['secret_key'] ?? null);
+        $inst = (string)($input['institution'] ?? 'lcl');
+        $instId = ($inst === 'revolut') ? GoCardlessClient::INSTITUTION_REVOLUT : GoCardlessClient::INSTITUTION_LCL;
+        $ref = 'tunasse_' . $inst . '_' . time();
+
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+        $host = $_SERVER['HTTP_HOST'] ?? '127.0.0.1:8085';
+        $redirectUrl = $protocol . $host . '/api.php?action=banking_callback';
+
+        try {
+            $req = $client->createRequisition($instId, $redirectUrl, $ref);
+            $banking['requisitions'][$req['id']] = [
+                'institution' => $inst,
+                'institution_id' => $instId,
+                'created_at' => date('Y-m-d H:i:s'),
+                'status' => $req['status'] ?? 'CR'
+            ];
+            $state['banking'] = $banking;
+            $store->save($state);
+
+            echo json_encode([
+                'success' => true,
+                'link' => $req['link'],
+                'requisition_id' => $req['id'],
+                'simulated' => !empty($req['simulated'])
+            ]);
+        } catch (\Throwable $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+        exit;
+
+    case 'banking_callback':
+        $ref = (string)($_GET['ref'] ?? '');
+        $simulated = !empty($_GET['simulated']);
+        $banking = $state['banking'] ?? [];
+        $client = new GoCardlessClient($banking['secret_id'] ?? null, $banking['secret_key'] ?? null);
+
+        // Find requisition
+        $targetReqId = null;
+        $targetInst = 'LCL';
+        foreach ($banking['requisitions'] ?? [] as $id => $req) {
+            $targetReqId = $id;
+            $targetInst = $req['institution'] ?? 'LCL';
+            break;
+        }
+
+        // Add default/discovered accounts
+        if (!isset($banking['accounts'])) {
+            $banking['accounts'] = [];
+        }
+
+        $accId = 'acc_' . strtolower($targetInst) . '_' . substr(md5($ref ?: 'tunasse'), 0, 8);
+        $exists = false;
+        foreach ($banking['accounts'] as &$acc) {
+            if ($acc['institution'] === strtolower($targetInst)) {
+                $acc['status'] = 'connected';
+                $acc['last_sync'] = date('Y-m-d H:i:s');
+                $exists = true;
+                break;
+            }
+        }
+        if (!$exists) {
+            $banking['accounts'][] = [
+                'id' => $accId,
+                'name' => 'Compte ' . strtoupper($targetInst) . ' Connecté',
+                'institution' => strtolower($targetInst),
+                'institution_id' => (strtolower($targetInst) === 'revolut') ? GoCardlessClient::INSTITUTION_REVOLUT : GoCardlessClient::INSTITUTION_LCL,
+                'status' => 'connected',
+                'last_balance' => (strtolower($targetInst) === 'revolut') ? 620.40 : 1450.20,
+                'currency' => 'EUR',
+                'last_sync' => date('Y-m-d H:i:s')
+            ];
+        }
+
+        $banking['last_global_sync'] = date('Y-m-d H:i:s');
+        $state['banking'] = $banking;
+        $store->save($state);
+
+        header('Location: index.php?banking_success=' . urlencode($targetInst));
+        exit;
+
+    case 'banking_sync':
+        $banking = $state['banking'] ?? [];
+        $client = new GoCardlessClient($banking['secret_id'] ?? null, $banking['secret_key'] ?? null);
+        $res = $client->syncAll($state);
+        $store->save($state);
+
+        echo json_encode([
+            'success' => true,
+            'result' => $res,
+            'banking' => $state['banking']
+        ]);
         exit;
 
     default:

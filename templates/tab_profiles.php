@@ -83,6 +83,62 @@ $splitMode = $state['splitRule']['mode'] ?? '50';
             </div>
           </div>
 
+          <!-- Automated Banking Integration (DSP2) -->
+          <div class="glass-card mb-4">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Synchronisation Bancaire Automatique (DSP2)</h2>
+                <p class="card-subtitle">Connexion en temps réel aux comptes LCL & Revolut via l'API Open Banking GoCardless</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-open-banking-config">
+                ⚙️ Configurer l'API
+              </button>
+            </div>
+
+            <div class="banking-sync-dashboard mt-3">
+              <div class="grid-2-col" style="gap:12px; margin-bottom:14px;">
+                <div class="metric-card" style="padding:14px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-size:1.4rem;">🏛️</span>
+                      <div>
+                        <strong style="display:block; font-size:0.9rem;">Compte LCL</strong>
+                        <span style="font-size:0.75rem; color:var(--text-dim);" id="banking-status-lcl">Non connecté</span>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-connect-lcl">
+                      Connecter LCL
+                    </button>
+                  </div>
+                </div>
+
+                <div class="metric-card" style="padding:14px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-size:1.4rem;">💳</span>
+                      <div>
+                        <strong style="display:block; font-size:0.9rem;">Compte Revolut</strong>
+                        <span style="font-size:0.75rem; color:var(--text-dim);" id="banking-status-revolut">Non connecté</span>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-connect-revolut">
+                      Connecter Revolut
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="banking-sync-actions" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:8px;">
+                <div style="font-size:0.8rem; color:var(--text-muted);">
+                  Dernière synchronisation automatique : <strong class="font-mono text-cyan" id="banking-last-sync-display">Jamais</strong>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-trigger-bank-sync">
+                  ⟳ Synchroniser maintenant
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Data Management & Backups -->
           <div class="glass-card">
             <div class="card-header">

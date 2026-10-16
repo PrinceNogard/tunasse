@@ -3006,5 +3006,18 @@ body {
   font-weight: 700;
 }
 
+/* Open Banking DSP2 Card & Status */
+.metric-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
 
+.metric-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
 
+.banking-notice-box a:hover {
+  color: #38bdf8;
+}
