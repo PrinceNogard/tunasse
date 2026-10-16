@@ -24,6 +24,12 @@ export const DEFAULT_STATE = {
     }
   ],
   splitRule: '50', // '50' or 'income'
+  actualTransfers: {
+    p1Lcl: 760.44,
+    p2Lcl: 621.56,
+    p1Rev: 450.00,
+    p2Rev: 450.00
+  },
   simulator: {
     totalGift: 25000.00,
     userShare: 50,
@@ -303,6 +309,10 @@ export function validateAndMigrateState(parsed, defaultState = DEFAULT_STATE) {
   }
 
   const merged = { ...defaultState, ...parsed };
+
+  if (!merged.actualTransfers || typeof merged.actualTransfers !== 'object') {
+    merged.actualTransfers = JSON.parse(JSON.stringify(defaultState.actualTransfers));
+  }
 
   if (!merged.travauxFund || !Array.isArray(merged.travauxFund.items) || merged.travauxFund.items.length === 0) {
     merged.travauxFund = JSON.parse(JSON.stringify(defaultState.travauxFund));

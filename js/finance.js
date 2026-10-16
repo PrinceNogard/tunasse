@@ -206,6 +206,21 @@ export function calculateBudgets(appState = {}) {
     revolutSpentThisMonth,
     globalMonthlyBudget,
     globalAnnualBudget,
+    totalMonthly: globalMonthlyBudget,
+    totalAnnual: globalAnnualBudget,
+    revolutTotal: revolutBudgetTotal,
+    p1Contrib: {
+      total: p1Total,
+      lcl: p1Lcl,
+      rev: p1RevBase,
+      loan: loan.monthlyPayment
+    },
+    p2Contrib: {
+      total: p2Total,
+      lcl: p2Lcl,
+      rev: p2RevBase,
+      loan: loan.monthlyPayment
+    },
     loan,
     p1Ratio,
     p2Ratio,

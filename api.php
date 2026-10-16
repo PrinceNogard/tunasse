@@ -299,6 +299,11 @@ switch ($action) {
                 exit;
             }
         }
+        if (!empty($input) && isset($input['profiles'], $input['simulator'])) {
+            $store->save($input);
+            echo json_encode(['success' => true]);
+            exit;
+        }
         echo json_encode(['success' => false, 'error' => 'Fichier JSON invalide']);
         exit;
 

@@ -94,24 +94,6 @@ $recentExpenses = array_slice(array_reverse($state['expenses'] ?? []), 0, 8);
                 Méthode active : <strong>Ajustement direct sur compte joint LCL</strong>. <?= htmlspecialchars($p1['name']) ?> verse <strong>+<?= Format::currency($simulator['monthlyPayment'] ?? 69.44) ?></strong> de plus au compte joint LCL et <?= htmlspecialchars($p2['name']) ?> verse <strong>-<?= Format::currency($simulator['monthlyPayment'] ?? 69.44) ?></strong> de moins chaque mois, soldant le prêt sans aucun virement privé séparé.
               </div>
             </div>
-
-            <!-- In-dashboard Quick Slider for convenience -->
-            <div class="quick-sim-dashboard mt-4">
-              <div class="quick-sim-header">
-                <span class="quick-sim-title">⚡ Ajustement rapide du Prêt Familial :</span>
-                <span class="quick-sim-val text-amber font-mono" id="dash-quick-loan-val"><?= Format::currency($state['simulator']['totalAmount'] ?? 25000) ?> • <?= (int)($state['simulator']['durationYears'] ?? 15) ?> ans = <?= Format::currency($simulator['monthlyPayment'] ?? 69.44) ?>/m</span>
-              </div>
-              <div class="quick-sim-controls">
-                <input type="range" id="dash-slider-amount" class="range-slider" min="5000" max="60000" step="500" value="<?= (int)($state['simulator']['totalAmount'] ?? 25000) ?>">
-                <div class="quick-presets-row">
-                  <button type="button" class="preset-btn" data-amount="15000">15 k€</button>
-                  <button type="button" class="preset-btn active" data-amount="25000">25 k€ (Défaut)</button>
-                  <button type="button" class="preset-btn" data-amount="30000">30 k€</button>
-                  <button type="button" class="preset-btn" data-amount="40000">40 k€</button>
-                  <button type="button" class="btn btn-ghost btn-sm" id="btn-jump-to-simulator">Ouvrir le simulateur complet →</button>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- Quick Charts / Overview -->
@@ -177,47 +159,79 @@ $recentExpenses = array_slice(array_reverse($state['expenses'] ?? []), 0, 8);
           </div>
         </div>
 
-        <!-- Synthèse : Virements Automatiques Mensuels Programmés (LCL & Revolut) -->
+        <!-- Synthèse Interactive : Virements Réels vs Répartition Estimée -->
         <div class="glass-card mt-6">
           <div class="card-header">
             <div>
-              <div class="badge-amber mb-2">Fonctionnement Récurrent Estimé</div>
+              <div class="badge-amber mb-2">Virements Réels vs Estimation Théorique</div>
               <h2 class="card-title">Virements Automatiques Mensuels Programmés</h2>
-              <p class="card-subtitle">Ce qu'<?= htmlspecialchars($p1['name']) ?> et <?= htmlspecialchars($p2['name']) ?> mettent chaque mois de manière automatique sur le compte LCL et le compte Revolut</p>
+              <p class="card-subtitle">Saisissez les montants exacts que vous virez chaque mois sur LCL et Revolut pour comparer avec la répartition calculée</p>
+            </div>
+            <div id="transfer-sync-badge" class="badge-tag" style="background:rgba(16,185,129,0.12); color:#34d399;">
+              ● Synchronisé en direct
             </div>
           </div>
 
           <div class="table-responsive">
-            <table class="custom-table">
+            <table class="custom-table transfers-comparison-table">
               <thead>
                 <tr>
                   <th>Compte Destinataire</th>
-                  <th>Affectation / Type de charges</th>
-                  <th class="text-right">Alimentation Totale</th>
-                  <th class="text-right" style="color:<?= htmlspecialchars($p1['color']) ?>;">Virement <?= htmlspecialchars($p1['name']) ?></th>
-                  <th class="text-right" style="color:<?= htmlspecialchars($p2['color']) ?>;">Virement <?= htmlspecialchars($p2['name']) ?></th>
+                  <th class="text-right">Part Estimée <?= htmlspecialchars($p1['name']) ?></th>
+                  <th class="text-right" style="color:<?= htmlspecialchars($p1['color']) ?>;">Viré Réel <?= htmlspecialchars($p1['name']) ?></th>
+                  <th class="text-right">Part Estimée <?= htmlspecialchars($p2['name']) ?></th>
+                  <th class="text-right" style="color:<?= htmlspecialchars($p2['color']) ?>;">Viré Réel <?= htmlspecialchars($p2['name']) ?></th>
+                  <th class="text-right">Total Réel Viré</th>
+                  <th class="text-right">Écart vs Budget</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td><span class="bank-tag lcl-tag">LCL</span> <strong>Compte Joint LCL</strong></td>
-                  <td class="text-dim">Package Logement Fixe (Prêt bancaire, assurances, taxe foncière, charges)</td>
-                  <td class="text-right font-mono font-bold text-cyan"><?= Format::currency($budgets['lclTotal'] ?? 1382) ?></td>
-                  <td class="text-right font-mono text-cyan" id="auto-lcl-p1"><?= Format::currency($p1Contrib['lcl'] ?? 760.44) ?></td>
-                  <td class="text-right font-mono text-cyan" id="auto-lcl-p2"><?= Format::currency($p2Contrib['lcl'] ?? 621.56) ?></td>
+                  <td>
+                    <span class="bank-tag lcl-tag">LCL</span> <strong>Compte Joint LCL</strong>
+                    <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">Package Logement (<?= Format::currency($budgets['lclTotal'] ?? 1382) ?>)</div>
+                  </td>
+                  <td class="text-right font-mono" id="target-lcl-p1"><?= Format::currency($p1Contrib['lcl'] ?? 760.44) ?></td>
+                  <td class="text-right">
+                    <input type="number" step="0.5" id="actual-lcl-p1" class="transfer-input font-mono" value="<?= (float)($state['actualTransfers']['p1Lcl'] ?? 760.44) ?>">
+                  </td>
+                  <td class="text-right font-mono" id="target-lcl-p2"><?= Format::currency($p2Contrib['lcl'] ?? 621.56) ?></td>
+                  <td class="text-right">
+                    <input type="number" step="0.5" id="actual-lcl-p2" class="transfer-input font-mono" value="<?= (float)($state['actualTransfers']['p2Lcl'] ?? 621.56) ?>">
+                  </td>
+                  <td class="text-right font-mono font-bold text-cyan" id="actual-total-lcl"><?= Format::currency(($state['actualTransfers']['p1Lcl'] ?? 760.44) + ($state['actualTransfers']['p2Lcl'] ?? 621.56)) ?></td>
+                  <td class="text-right font-mono" id="diff-lcl">
+                    <span class="badge-tag" style="background:rgba(16,185,129,0.15); color:#34d399;">0,00 €</span>
+                  </td>
                 </tr>
                 <tr>
-                  <td><span class="bank-tag rev-tag">Revolut</span> <strong>Compte Commun Revolut</strong></td>
-                  <td class="text-dim">Vie Courante & Foyer (Courses alimentaires, abonnements, sorties, imprévus)</td>
-                  <td class="text-right font-mono font-bold text-violet"><?= Format::currency($budgets['revolutTotal'] ?? 900) ?></td>
-                  <td class="text-right font-mono text-violet" id="auto-rev-p1"><?= Format::currency($p1Contrib['rev'] ?? 450) ?></td>
-                  <td class="text-right font-mono text-violet" id="auto-rev-p2"><?= Format::currency($p2Contrib['rev'] ?? 450) ?></td>
+                  <td>
+                    <span class="bank-tag rev-tag">Revolut</span> <strong>Compte Commun Revolut</strong>
+                    <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">Vie Courante Foyer (<?= Format::currency($budgets['revolutTotal'] ?? 900) ?>)</div>
+                  </td>
+                  <td class="text-right font-mono" id="target-rev-p1"><?= Format::currency($p1Contrib['rev'] ?? 450) ?></td>
+                  <td class="text-right">
+                    <input type="number" step="0.5" id="actual-rev-p1" class="transfer-input font-mono" value="<?= (float)($state['actualTransfers']['p1Rev'] ?? 450) ?>">
+                  </td>
+                  <td class="text-right font-mono" id="target-rev-p2"><?= Format::currency($p2Contrib['rev'] ?? 450) ?></td>
+                  <td class="text-right">
+                    <input type="number" step="0.5" id="actual-rev-p2" class="transfer-input font-mono" value="<?= (float)($state['actualTransfers']['p2Rev'] ?? 450) ?>">
+                  </td>
+                  <td class="text-right font-mono font-bold text-violet" id="actual-total-rev"><?= Format::currency(($state['actualTransfers']['p1Rev'] ?? 450) + ($state['actualTransfers']['p2Rev'] ?? 450)) ?></td>
+                  <td class="text-right font-mono" id="diff-rev">
+                    <span class="badge-tag" style="background:rgba(16,185,129,0.15); color:#34d399;">0,00 €</span>
+                  </td>
                 </tr>
                 <tr style="background:rgba(255,255,255,0.02); font-weight:700;">
-                  <td colspan="2"><strong>TOTAL DES VIREMENTS AUTOMATIQUES MENSUELS</strong></td>
-                  <td class="text-right font-mono font-bold text-emerald"><?= Format::currency($budgets['totalMonthly'] ?? 2282) ?></td>
-                  <td class="text-right font-mono font-bold text-emerald" id="auto-total-p1"><?= Format::currency($p1Contrib['total'] ?? 1210.44) ?></td>
-                  <td class="text-right font-mono font-bold text-emerald" id="auto-total-p2"><?= Format::currency($p2Contrib['total'] ?? 1071.56) ?></td>
+                  <td><strong>TOTAL DES VIREMENTS MENSUELS</strong></td>
+                  <td class="text-right font-mono" id="target-total-p1"><?= Format::currency($p1Contrib['total'] ?? 1210.44) ?></td>
+                  <td class="text-right font-mono text-cyan" id="actual-sum-p1"><?= Format::currency(($state['actualTransfers']['p1Lcl'] ?? 760.44) + ($state['actualTransfers']['p1Rev'] ?? 450)) ?></td>
+                  <td class="text-right font-mono" id="target-total-p2"><?= Format::currency($p2Contrib['total'] ?? 1071.56) ?></td>
+                  <td class="text-right font-mono text-violet" id="actual-sum-p2"><?= Format::currency(($state['actualTransfers']['p2Lcl'] ?? 621.56) + ($state['actualTransfers']['p2Rev'] ?? 450)) ?></td>
+                  <td class="text-right font-mono font-bold text-emerald" id="actual-grand-total"><?= Format::currency(($state['actualTransfers']['p1Lcl'] ?? 760.44) + ($state['actualTransfers']['p2Lcl'] ?? 621.56) + ($state['actualTransfers']['p1Rev'] ?? 450) + ($state['actualTransfers']['p2Rev'] ?? 450)) ?></td>
+                  <td class="text-right font-mono font-bold" id="diff-grand-total">
+                    <span class="badge-tag" style="background:rgba(16,185,129,0.15); color:#34d399;">0,00 € (Équilibré)</span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -271,56 +285,6 @@ $recentExpenses = array_slice(array_reverse($state['expenses'] ?? []), 0, 8);
               <span class="legend-chip"><span class="chip-dot dot-violet"></span> <?= htmlspecialchars($p2['name']) ?> : <strong id="dash-trv-legend-ariane"><?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?></strong> (<?= $travaux['arianePctOfSpent'] ?? 59.6 ?>%)</span>
               <span class="legend-chip"><span class="chip-dot dot-slate"></span> Restant : <strong id="dash-trv-legend-rem"><?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?></strong> (<?= $travaux['remainingPct'] ?? 73.8 ?>%)</span>
             </div>
-          </div>
-        </div>
-
-        <!-- Recent Transactions / Activity Strip -->
-        <div class="glass-card mt-6">
-          <div class="card-header">
-            <div>
-              <h2 class="card-title">Dernières Dépenses Communes</h2>
-              <p class="card-subtitle">Historique des achats sur le compte commun Revolut ou LCL</p>
-            </div>
-            <button class="btn btn-secondary btn-sm" id="btn-view-all-expenses">Voir toutes les dépenses</button>
-          </div>
-
-          <div class="table-responsive">
-            <table class="custom-table" id="recent-expenses-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Compte</th>
-                  <th>Catégorie</th>
-                  <th>Payé par</th>
-                  <th class="text-right">Montant</th>
-                  <th class="text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody id="recent-expenses-tbody">
-                <?php if (empty($recentExpenses)): ?>
-                  <tr><td colspan="7" class="text-center text-dim py-4">Aucune dépense enregistrée.</td></tr>
-                <?php else: ?>
-                  <?php foreach ($recentExpenses as $exp): ?>
-                    <tr>
-                      <td class="font-mono text-dim"><?= htmlspecialchars(Format::date($exp['date'] ?? '')) ?></td>
-                      <td><strong><?= htmlspecialchars($exp['description'] ?? '') ?></strong></td>
-                      <td><span class="bank-tag <?= ($exp['account'] ?? '') === 'LCL' ? 'lcl-tag' : 'rev-tag' ?>"><?= htmlspecialchars($exp['account'] ?? '') ?></span></td>
-                      <td><span class="badge-subtle"><?= htmlspecialchars($exp['category'] ?? '') ?></span></td>
-                      <td>
-                        <span class="badge-tag <?= ($exp['payer'] ?? '') === 'Ariane' ? 'ariane-tag' : 'axel-tag' ?>">
-                          <?= htmlspecialchars($exp['payer'] ?? '') ?>
-                        </span>
-                      </td>
-                      <td class="text-right font-mono font-bold"><?= Format::currency($exp['amount'] ?? 0) ?></td>
-                      <td class="text-center">
-                        <button class="btn-icon btn-delete-expense" data-id="<?= htmlspecialchars($exp['id'] ?? '') ?>" title="Supprimer">🗑️</button>
-                      </td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php endif; ?>
-              </tbody>
-            </table>
           </div>
         </div>
       </section>

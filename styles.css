@@ -3028,3 +3028,40 @@ body {
 .banking-notice-box a:hover {
   color: #38bdf8;
 }
+
+/* Saisie des virements réels programmés & Écarts */
+.transfers-comparison-table th,
+.transfers-comparison-table td {
+  vertical-align: middle;
+}
+
+.transfer-input {
+  width: 95px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm, 6px);
+  padding: 6px 10px;
+  color: var(--text-main, #f8fafc);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: right;
+  transition: all 0.15s ease;
+}
+
+.transfer-input:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+  background: rgba(15, 23, 42, 0.98);
+}
+
+.transfers-comparison-table input[type=number]::-webkit-inner-spin-button,
+.transfers-comparison-table input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.transfers-comparison-table input[type=number] {
+  -moz-appearance: textfield;
+}
+

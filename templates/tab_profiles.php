@@ -52,35 +52,6 @@ $splitMode = $state['splitRule']['mode'] ?? '50';
                 </div>
               <?php endforeach; ?>
             </div>
-
-            <div class="split-rule-section mt-4">
-              <h4 class="card-title" style="font-size:0.95rem;">Règle de Répartition des Charges Communes</h4>
-              <p class="card-subtitle">Comment répartir les dépenses hors prêt familial</p>
-
-              <div class="split-rule-options mt-3">
-                <label class="rule-choice-card">
-                  <input type="radio" name="split-rule-mode" value="50" id="rule-50-50" <?= $splitMode === '50' ? 'checked' : '' ?>>
-                  <div class="rule-box">
-                    <span class="method-radio-custom"></span>
-                    <div>
-                      <strong>Égalité stricte (50% / 50%)</strong>
-                      <p>Chacun prend en charge exactement la moitié des dépenses communes LCL et Revolut.</p>
-                    </div>
-                  </div>
-                </label>
-
-                <label class="rule-choice-card">
-                  <input type="radio" name="split-rule-mode" value="income" id="rule-income" <?= $splitMode === 'income' ? 'checked' : '' ?>>
-                  <div class="rule-box">
-                    <span class="method-radio-custom"></span>
-                    <div>
-                      <strong>Proportionnelle aux Revenus Nets (Équité)</strong>
-                      <p>Répartition calculée automatiquement selon les salaires déclarés ci-dessus.</p>
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
           </div>
 
           <!-- Automated Banking Integration (DSP2) -->

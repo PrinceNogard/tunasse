@@ -57,76 +57,6 @@
       </div>
     </header>
 
-    <!-- SUMMARY HERO STRIP -->
-    <section class="summary-strip">
-      <div class="summary-card stat-total">
-        <div class="card-icon-wrapper blue">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        </div>
-        <div class="stat-content">
-          <span class="stat-label">Budget Mensuel Total</span>
-          <span class="stat-value" id="top-total-budget">0,00 €</span>
-          <span class="stat-subtext" id="top-total-annual">0,00 € / an</span>
-        </div>
-      </div>
-
-      <div class="summary-card stat-lcl">
-        <div class="card-icon-wrapper cyan">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        </div>
-        <div class="stat-content">
-          <div class="stat-header-row">
-            <span class="stat-label">LCL • Package Immo Statique</span>
-            <span class="bank-tag lcl-tag">LCL</span>
-          </div>
-          <span class="stat-value" id="top-lcl-budget">0,00 €</span>
-          <span class="stat-subtext" id="top-lcl-subtext">Crédit immo, assurances & taxe</span>
-        </div>
-      </div>
-
-      <div class="summary-card stat-revolut">
-        <div class="card-icon-wrapper violet">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-        </div>
-        <div class="stat-content">
-          <div class="stat-header-row">
-            <span class="stat-label">Revolut • Vie Courante</span>
-            <span class="bank-tag rev-tag">Revolut</span>
-          </div>
-          <span class="stat-value" id="top-revolut-budget">0,00 €</span>
-          <span class="stat-subtext" id="top-revolut-spent">0,00 € dépensés ce mois</span>
-        </div>
-      </div>
-
-      <div class="summary-card stat-equalizer clickable" id="card-quick-equalizer" title="Cliquez pour ouvrir le simulateur de prêt">
-        <div class="card-icon-wrapper amber">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <div class="stat-content">
-          <div class="stat-header-row">
-            <span class="stat-label">Remboursement Prêt Familial</span>
-            <span class="bank-tag amber-tag" id="top-repayment-tag">15 ans</span>
-          </div>
-          <span class="stat-value text-amber" id="top-repayment-monthly">+69,44 €</span>
-          <span class="stat-subtext" id="top-repayment-subtext">Axel rembourse Ariane</span>
-        </div>
-      </div>
-
-      <div class="summary-card stat-travaux clickable" id="card-quick-travaux" title="Cliquez pour ouvrir l'enveloppe travaux 50 000 €">
-        <div class="card-icon-wrapper emerald">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m14.7 6.3 3 3-9.4 9.4H5.3v-3l9.4-9.4z"/><path d="m18 3 3 3-2 2-3-3z"/></svg>
-        </div>
-        <div class="stat-content">
-          <div class="stat-header-row">
-            <span class="stat-label">Enveloppe Travaux</span>
-            <span class="bank-tag emerald-tag" id="top-travaux-tag">Reste 36 885 €</span>
-          </div>
-          <span class="stat-value text-emerald" id="top-travaux-consumed">13 114,85 €</span>
-          <span class="stat-subtext" id="top-travaux-subtext">consommé sur 50 000,00 €</span>
-        </div>
-      </div>
-    </section>
-
     <!-- MAIN VIEW CONTAINER -->
     <main class="main-content">
 
@@ -212,25 +142,6 @@
               </div>
             </div>
 
-            <!-- In-dashboard Quick Slider for convenience -->
-            <div class="quick-sim-dashboard mt-4">
-              <div class="quick-sim-header">
-                <span class="quick-sim-title">⚡ Ajustement rapide du Prêt Familial :</span>
-                <span class="quick-sim-val text-amber font-mono" id="dash-quick-loan-val">25 000 € • 15 ans = 69,44 €/m</span>
-              </div>
-              <div class="quick-sim-controls">
-                <input type="range" id="dash-slider-amount" class="range-slider" min="5000" max="60000" step="500" value="25000">
-                <div class="quick-presets-row">
-                  <button type="button" class="preset-btn" data-amount="15000">15 k€</button>
-                  <button type="button" class="preset-btn active" data-amount="25000">25 k€ (Défaut)</button>
-                  <button type="button" class="preset-btn" data-amount="30000">30 k€</button>
-                  <button type="button" class="preset-btn" data-amount="40000">40 k€</button>
-                  <button type="button" class="btn btn-ghost btn-sm" id="btn-jump-to-simulator">Ouvrir le simulateur complet →</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Quick Charts / Overview -->
           <div class="glass-card">
             <div class="card-header">
@@ -278,6 +189,87 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Synthèse Interactive : Virements Réels vs Répartition Estimée -->
+        <div class="glass-card mt-6">
+          <div class="card-header">
+            <div>
+              <div class="badge-amber mb-2">Virements Réels vs Estimation Théorique</div>
+              <h2 class="card-title">Virements Automatiques Mensuels Programmés</h2>
+              <p class="card-subtitle">Saisissez les montants exacts que vous virez chaque mois sur LCL et Revolut pour comparer avec la répartition calculée</p>
+            </div>
+            <div id="transfer-sync-badge" class="badge-tag" style="background:rgba(16,185,129,0.12); color:#34d399;">
+              ● Synchronisé en direct
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table transfers-comparison-table">
+              <thead>
+                <tr>
+                  <th>Compte Destinataire</th>
+                  <th class="text-right">Part Estimée Axel</th>
+                  <th class="text-right" style="color:#0ea5e9;">Viré Réel Axel</th>
+                  <th class="text-right">Part Estimée Ariane</th>
+                  <th class="text-right" style="color:#8b5cf6;">Viré Réel Ariane</th>
+                  <th class="text-right">Total Réel Viré</th>
+                  <th class="text-right">Écart vs Budget</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <span class="bank-tag lcl-tag">LCL</span> <strong>Compte Joint LCL</strong>
+                    <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">Package Logement (1 382,00 €)</div>
+                  </td>
+                  <td class="text-right font-mono" id="target-lcl-p1">760,44 €</td>
+                  <td class="text-right">
+                    <input type="number" step="0.5" id="actual-lcl-p1" class="transfer-input font-mono" value="760.44">
+                  </td>
+                  <td class="text-right font-mono" id="target-lcl-p2">621,56 €</td>
+                  <td class="text-right">
+                    <input type="number" step="0.5" id="actual-lcl-p2" class="transfer-input font-mono" value="621.56">
+                  </td>
+                  <td class="text-right font-mono font-bold text-cyan" id="actual-total-lcl">1 382,00 €</td>
+                  <td class="text-right font-mono" id="diff-lcl">
+                    <span class="badge-tag" style="background:rgba(16,185,129,0.15); color:#34d399;">0,00 €</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <span class="bank-tag rev-tag">Revolut</span> <strong>Compte Commun Revolut</strong>
+                    <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">Vie Courante Foyer (900,00 €)</div>
+                  </td>
+                  <td class="text-right font-mono" id="target-rev-p1">450,00 €</td>
+                  <td class="text-right">
+                    <input type="number" step="0.5" id="actual-rev-p1" class="transfer-input font-mono" value="450.00">
+                  </td>
+                  <td class="text-right font-mono" id="target-rev-p2">450,00 €</td>
+                  <td class="text-right">
+                    <input type="number" step="0.5" id="actual-rev-p2" class="transfer-input font-mono" value="450.00">
+                  </td>
+                  <td class="text-right font-mono font-bold text-violet" id="actual-total-rev">900,00 €</td>
+                  <td class="text-right font-mono" id="diff-rev">
+                    <span class="badge-tag" style="background:rgba(16,185,129,0.15); color:#34d399;">0,00 €</span>
+                  </td>
+                </tr>
+                <tr style="background:rgba(255,255,255,0.02); font-weight:700;">
+                  <td><strong>TOTAL DES VIREMENTS MENSUELS</strong></td>
+                  <td class="text-right font-mono" id="target-total-p1">1 210,44 €</td>
+                  <td class="text-right font-mono text-cyan" id="actual-sum-p1">1 210,44 €</td>
+                  <td class="text-right font-mono" id="target-total-p2">1 071,56 €</td>
+                  <td class="text-right font-mono text-violet" id="actual-sum-p2">1 071,56 €</td>
+                  <td class="text-right font-mono font-bold text-emerald" id="actual-grand-total">2 282,00 €</td>
+                  <td class="text-right font-mono font-bold" id="diff-grand-total">
+                    <span class="badge-tag" style="background:rgba(16,185,129,0.15); color:#34d399;">0,00 € (Équilibré)</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Travaux Quick Snapshot in Dashboard -->
         <div class="glass-card mt-6 clickable" id="dash-travaux-card" title="Cliquez pour ouvrir l'enveloppe travaux">
           <div class="card-header">
@@ -325,36 +317,6 @@
               <span class="legend-chip"><span class="chip-dot dot-violet"></span> Ariane : <strong id="dash-trv-legend-ariane">7 812,85 €</strong> (59,6%)</span>
               <span class="legend-chip"><span class="chip-dot dot-slate"></span> Restant : <strong id="dash-trv-legend-rem">36 885,15 €</strong> (73,8%)</span>
             </div>
-          </div>
-        </div>
-
-        <!-- Recent Transactions / Activity Strip -->
-        <div class="glass-card mt-6">
-          <div class="card-header">
-            <div>
-              <h2 class="card-title">Dernières Dépenses Communes</h2>
-              <p class="card-subtitle">Historique des achats sur le compte commun Revolut ou LCL</p>
-            </div>
-            <button class="btn btn-secondary btn-sm" id="btn-view-all-expenses">Voir toutes les dépenses</button>
-          </div>
-
-          <div class="table-responsive">
-            <table class="custom-table" id="recent-expenses-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Compte</th>
-                  <th>Catégorie</th>
-                  <th>Payé par</th>
-                  <th class="text-right">Montant</th>
-                  <th class="text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody id="recent-expenses-tbody">
-                <!-- Populated via JS -->
-              </tbody>
-            </table>
           </div>
         </div>
       </section>
@@ -1309,35 +1271,6 @@
 
             <div class="profiles-edit-list" id="profiles-container">
               <!-- Populated via JS -->
-            </div>
-
-            <div class="split-rule-section mt-4">
-              <h4 class="card-title" style="font-size:0.95rem;">Règle de Répartition des Charges Communes</h4>
-              <p class="card-subtitle">Comment répartir les dépenses hors prêt familial</p>
-
-              <div class="split-rule-options mt-3">
-                <label class="rule-choice-card">
-                  <input type="radio" name="split-rule-mode" value="50" id="rule-50-50" checked>
-                  <div class="rule-box">
-                    <span class="method-radio-custom"></span>
-                    <div>
-                      <strong>Égalité stricte (50% / 50%)</strong>
-                      <p>Chacun prend en charge exactement la moitié des dépenses communes LCL et Revolut.</p>
-                    </div>
-                  </div>
-                </label>
-
-                <label class="rule-choice-card">
-                  <input type="radio" name="split-rule-mode" value="income" id="rule-income">
-                  <div class="rule-box">
-                    <span class="method-radio-custom"></span>
-                    <div>
-                      <strong>Proportionnelle aux Revenus Nets (Équité)</strong>
-                      <p>Répartition calculée automatiquement selon les salaires déclarés ci-dessus.</p>
-                    </div>
-                  </div>
-                </label>
-              </div>
             </div>
           </div>
 

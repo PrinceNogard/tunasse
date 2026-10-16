@@ -1055,6 +1055,84 @@ function updateBankingStatusUI() {
 }
 
 
+function formatDiffBadge(diff) {
+  const rounded = Math.round(diff * 100) / 100;
+  if (Math.abs(rounded) < 0.01) {
+    return '<span class="badge-tag" style="background:rgba(16,185,129,0.15); color:#34d399;">0,00 € (Équilibré)</span>';
+  }
+  if (rounded > 0) {
+    return `<span class="badge-tag" style="background:rgba(56,189,248,0.15); color:#38bdf8;">+${formatCurrency(rounded)} (Excédent)</span>`;
+  }
+  return `<span class="badge-tag" style="background:rgba(244,63,94,0.15); color:#fb7185;">-${formatCurrency(Math.abs(rounded))} (Déficit)</span>`;
+}
+
+function renderTransfersComparison(data) {
+  const setEl = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+  const setHtml = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = val;
+  };
+
+  const p1Lcl = data.p1Contrib?.lcl ?? (data.split?.p1Lcl || 0);
+  const p2Lcl = data.p2Contrib?.lcl ?? (data.split?.p2Lcl || 0);
+  const p1Rev = data.p1Contrib?.rev ?? (data.split?.p1Rev || 0);
+  const p2Rev = data.p2Contrib?.rev ?? (data.split?.p2Rev || 0);
+  const p1Total = data.p1Contrib?.total ?? (data.split?.p1Total || 0);
+  const p2Total = data.p2Contrib?.total ?? (data.split?.p2Total || 0);
+
+  // Theoretical targets
+  setEl('target-lcl-p1', formatCurrency(p1Lcl));
+  setEl('target-lcl-p2', formatCurrency(p2Lcl));
+  setEl('target-rev-p1', formatCurrency(p1Rev));
+  setEl('target-rev-p2', formatCurrency(p2Rev));
+  setEl('target-total-p1', formatCurrency(p1Total));
+  setEl('target-total-p2', formatCurrency(p2Total));
+
+  // Actual transfers
+  if (!appState.actualTransfers) {
+    appState.actualTransfers = {
+      p1Lcl: 760.44,
+      p2Lcl: 621.56,
+      p1Rev: 450.00,
+      p2Rev: 450.00
+    };
+  }
+
+  const act = appState.actualTransfers;
+  const inLcl1 = document.getElementById('actual-lcl-p1');
+  const inLcl2 = document.getElementById('actual-lcl-p2');
+  const inRev1 = document.getElementById('actual-rev-p1');
+  const inRev2 = document.getElementById('actual-rev-p2');
+
+  if (inLcl1 && document.activeElement !== inLcl1) inLcl1.value = act.p1Lcl ?? 760.44;
+  if (inLcl2 && document.activeElement !== inLcl2) inLcl2.value = act.p2Lcl ?? 621.56;
+  if (inRev1 && document.activeElement !== inRev1) inRev1.value = act.p1Rev ?? 450.00;
+  if (inRev2 && document.activeElement !== inRev2) inRev2.value = act.p2Rev ?? 450.00;
+
+  const actualLclTotal = (Number(act.p1Lcl) || 0) + (Number(act.p2Lcl) || 0);
+  const actualRevTotal = (Number(act.p1Rev) || 0) + (Number(act.p2Rev) || 0);
+  const actualP1Sum = (Number(act.p1Lcl) || 0) + (Number(act.p1Rev) || 0);
+  const actualP2Sum = (Number(act.p2Lcl) || 0) + (Number(act.p2Rev) || 0);
+  const actualGrandTotal = actualLclTotal + actualRevTotal;
+
+  setEl('actual-total-lcl', formatCurrency(actualLclTotal));
+  setEl('actual-total-rev', formatCurrency(actualRevTotal));
+  setEl('actual-sum-p1', formatCurrency(actualP1Sum));
+  setEl('actual-sum-p2', formatCurrency(actualP2Sum));
+  setEl('actual-grand-total', formatCurrency(actualGrandTotal));
+
+  const diffLcl = actualLclTotal - data.lclTotal;
+  const diffRev = actualRevTotal - (data.revolutTotal || data.revolutBudgetTotal);
+  const diffGrand = actualGrandTotal - (data.totalMonthly || data.globalMonthlyBudget);
+
+  setHtml('diff-lcl', formatDiffBadge(diffLcl));
+  setHtml('diff-rev', formatDiffBadge(diffRev));
+  setHtml('diff-grand-total', formatDiffBadge(diffGrand));
+}
+
 function renderSummaryStrip(data) {
   const { globalMonthlyBudget, globalAnnualBudget, lclTotal, revolutBudgetTotal, revolutSpentThisMonth } = data;
   const setEl = (id, val) => {
@@ -1075,6 +1153,8 @@ function renderSummaryStrip(data) {
   setEl('auto-rev-p2', formatCurrency(data.p2Contrib?.rev || 0));
   setEl('auto-total-p1', formatCurrency(data.p1Contrib?.total || 0));
   setEl('auto-total-p2', formatCurrency(data.p2Contrib?.total || 0));
+
+  renderTransfersComparison(data);
 
   const p1 = appState.profiles[0];
   const p2 = appState.profiles[1];
@@ -1266,8 +1346,8 @@ function handleDeleteExpense(target) {
 
 const CLICK_DISPATCHERS = [
   { selector: '.btn-toggle-reimbursed', handler: handleToggleReimbursed },
-  { selector: '.btn-edit-trv', handler: handleEditTrv },
-  { selector: '.btn-delete-trv', handler: handleDeleteTrv },
+  { selector: '.btn-edit-trv, .btn-edit-travaux', handler: handleEditTrv },
+  { selector: '.btn-delete-trv, .btn-delete-travaux', handler: handleDeleteTrv },
   { selector: '.btn-edit-lot', handler: handleEditLot },
   { selector: '.btn-delete-lot', handler: handleDeleteLot },
   { selector: '.btn-delete-lcl', handler: handleDeleteLcl },
@@ -1415,8 +1495,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const jumpTrv3 = document.getElementById('dash-travaux-card');
   if (jumpTrv3) jumpTrv3.addEventListener('click', () => document.getElementById('tab-btn-travaux')?.click());
 
-  // Profile Net Incomes & Split Rule
+  // Profile Net Incomes, Split Rule & Actual Transfers
   document.addEventListener('input', (e) => {
+    if (e.target.classList.contains('transfer-input')) {
+      if (!appState.actualTransfers) appState.actualTransfers = {};
+      const id = e.target.id;
+      const val = parseFloat(e.target.value) || 0;
+      if (id === 'actual-lcl-p1') appState.actualTransfers.p1Lcl = val;
+      if (id === 'actual-lcl-p2') appState.actualTransfers.p2Lcl = val;
+      if (id === 'actual-rev-p1') appState.actualTransfers.p1Rev = val;
+      if (id === 'actual-rev-p2') appState.actualTransfers.p2Rev = val;
+      saveStateDebounced();
+      const data = calculateBudgets(appState);
+      renderTransfersComparison(data);
+    }
     if (e.target.classList.contains('profile-name-input')) {
       const p = appState.profiles.find(x => x.id === e.target.dataset.id);
       if (p) {
@@ -1432,6 +1524,12 @@ document.addEventListener('DOMContentLoaded', () => {
         saveStateImmediate();
         renderAll();
       }
+    }
+  });
+
+  document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('transfer-input')) {
+      saveStateImmediate();
     }
   });
 

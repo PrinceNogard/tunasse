@@ -18,6 +18,12 @@
         }
     ],
     "splitRule": "50",
+    "actualTransfers": {
+        "p1Lcl": 760.44,
+        "p2Lcl": 621.56,
+        "p1Rev": 450.00,
+        "p2Rev": 450.00
+    },
     "simulator": {
         "totalGift": 25000,
         "userShare": 50,

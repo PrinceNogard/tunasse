@@ -28,7 +28,6 @@ $simulator = LoanCalculator::calculate($state['simulator'] ?? []);
 // 3. Render HTML views via modular PHP templates
 require __DIR__ . '/templates/head.php';
 require __DIR__ . '/templates/header.php';
-require __DIR__ . '/templates/summary_strip.php';
 
 echo "\n    <!-- MAIN VIEW CONTAINER -->\n    <main class=\"main-content\">\n";
 
