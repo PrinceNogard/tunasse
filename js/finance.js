@@ -22,6 +22,22 @@ export function computeMonthlyAnnuity(principal, annualRate, totalMonths) {
 }
 
 /**
+ * Compute elapsed months between start month and target month (default current date)
+ * @param {string} startMonth 
+ * @param {string|null} currentMonthStr 
+ * @returns {number}
+ */
+export function computeElapsedMonths(startMonth, currentMonthStr = null) {
+  if (!startMonth) return 0;
+  const now = currentMonthStr ? new Date(currentMonthStr + '-01') : new Date();
+  const [sYear, sMonth] = startMonth.split('-').map(Number);
+  const cYear = now.getFullYear();
+  const cMonth = now.getMonth() + 1;
+  const diff = (cYear - sYear) * 12 + (cMonth - sMonth) + 1;
+  return Math.max(0, diff);
+}
+
+/**
  * Calculate dynamic loan metrics for partner gift/repayment simulation
  * @param {Object} simulator 
  * @returns {Object}
@@ -31,8 +47,11 @@ export function calculateLoanMetrics(simulator = {}) {
   const userShare = Number(simulator.userShare) || 50;
   const durationYears = Number(simulator.durationYears) || 15;
   const interestRate = Number(simulator.interestRate) || 0;
-  const monthsPaidInput = Number(simulator.monthsPaid) || 0;
   const startMonth = simulator.startMonth || '2026-03';
+  const autoElapsed = computeElapsedMonths(startMonth, simulator.currentMonth || null);
+  const monthsPaidInput = (simulator.monthsPaid !== undefined && simulator.monthsPaid !== null && simulator.monthsPaid !== '')
+    ? Number(simulator.monthsPaid)
+    : autoElapsed;
   const method = simulator.method || 'offset';
 
   const borrowedAmount = totalGift * (userShare / 100);

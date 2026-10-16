@@ -13,7 +13,8 @@ import {
   calculateLoanMetrics,
   calculateBudgets,
   calculateTravauxMetrics,
-  resolveItemLot
+  resolveItemLot,
+  computeElapsedMonths
 } from './js/finance.js';
 
 import {
@@ -109,6 +110,16 @@ function syncSimulatorInputs(activeInputId, loan) {
 
   const labelElapsed = document.getElementById('label-elapsed-months');
   if (labelElapsed) labelElapsed.textContent = `${loan.monthsPaid} mois`;
+
+  const autoDisplay = document.getElementById('auto-months-paid-display');
+  if (autoDisplay) autoDisplay.textContent = `${loan.monthsPaid} mois réglés`;
+
+  const [sYear, sMonth] = (appState.simulator.startMonth || '2026-03').split('-');
+  const calYear = document.getElementById('cal-selected-year');
+  if (calYear && sYear) calYear.textContent = sYear;
+  document.querySelectorAll('.cal-month-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.m === sMonth);
+  });
 }
 
 function updateSimulatorMetricPills(loan, borrower, lender) {
@@ -1114,14 +1125,14 @@ function renderSimulatorView(data) {
 
   if (lSelect) {
     lSelect.innerHTML = appState.profiles.map(p => 
-      `<option value="${p.id}" ${p.id === appState.simulator?.lenderId ? 'selected' : ''}>${p.name} (via don de son père)</option>`
+      `<option value="${p.id}" ${p.id === appState.simulator?.lenderId ? 'selected' : ''}>${p.name}</option>`
     ).join('');
   }
 
   const heroDesc = document.getElementById('sim-hero-description');
   if (heroDesc) {
     heroDesc.innerHTML = `
-      Le père de <strong>${lender.name}</strong> lui a donné <strong>${formatCurrency(appState.simulator?.totalGift)}</strong> en apport. <strong>${borrower.name}</strong> s'est engagé à lui rembourser la moitié (50% = ${formatCurrency(appState.simulator?.totalGift / 2)}) sur <strong>${appState.simulator?.durationYears} ans</strong> (${appState.simulator?.durationYears * 12} mois, même durée que le prêt bancaire). Définis ton <strong>mois de départ</strong> pour suivre précisément ce qui a déjà été versé et ce qu'il reste à rembourser.
+      Prêt familial de <strong>${formatCurrency(appState.simulator?.totalGift)}</strong> consenti par <strong>${lender.name}</strong>. <strong>${borrower.name}</strong> rembourse sa part (${appState.simulator?.userShare}% = ${formatCurrency(appState.simulator?.totalGift * (appState.simulator?.userShare / 100))}) sur <strong>${appState.simulator?.durationYears} ans</strong> (${appState.simulator?.durationYears * 12} mois). Le nombre de mensualités déjà versées est calculé automatiquement depuis la date de départ jusqu'au mois actuel.
     `;
   }
 
@@ -1427,24 +1438,81 @@ document.addEventListener('DOMContentLoaded', () => {
   if (startMonthInput) {
     startMonthInput.addEventListener('change', (e) => {
       appState.simulator.startMonth = e.target.value;
+      delete appState.simulator.monthsPaid;
       updateSimulatorRealtime('input-loan-start-month');
     });
   }
 
-  const numMonthsPaidInput = document.getElementById('num-months-paid');
-  if (numMonthsPaidInput) {
-    numMonthsPaidInput.addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
-      if (!isNaN(val)) {
-        appState.simulator.monthsPaid = Math.max(0, val);
-        updateSimulatorRealtime('num-months-paid');
-      }
+  // Interactive Month Calendar Selector handlers
+  document.querySelectorAll('.cal-month-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const year = document.getElementById('cal-selected-year')?.textContent.trim() || '2026';
+      const m = btn.dataset.m;
+      const startMonth = `${year}-${m}`;
+      appState.simulator.startMonth = startMonth;
+      delete appState.simulator.monthsPaid;
+      if (startMonthInput) startMonthInput.value = startMonth;
+      updateSimulatorRealtime('input-loan-start-month');
+    });
+  });
+
+  const prevYearBtn = document.getElementById('btn-cal-year-prev');
+  const nextYearBtn = document.getElementById('btn-cal-year-next');
+  if (prevYearBtn) {
+    prevYearBtn.addEventListener('click', () => {
+      const calYear = document.getElementById('cal-selected-year');
+      if (!calYear) return;
+      const newYear = parseInt(calYear.textContent, 10) - 1;
+      calYear.textContent = newYear;
+      const [_, sMonth] = (appState.simulator.startMonth || '2026-03').split('-');
+      const startMonth = `${newYear}-${sMonth || '03'}`;
+      appState.simulator.startMonth = startMonth;
+      delete appState.simulator.monthsPaid;
+      if (startMonthInput) startMonthInput.value = startMonth;
+      updateSimulatorRealtime('input-loan-start-month');
+    });
+  }
+  if (nextYearBtn) {
+    nextYearBtn.addEventListener('click', () => {
+      const calYear = document.getElementById('cal-selected-year');
+      if (!calYear) return;
+      const newYear = parseInt(calYear.textContent, 10) + 1;
+      calYear.textContent = newYear;
+      const [_, sMonth] = (appState.simulator.startMonth || '2026-03').split('-');
+      const startMonth = `${newYear}-${sMonth || '03'}`;
+      appState.simulator.startMonth = startMonth;
+      delete appState.simulator.monthsPaid;
+      if (startMonthInput) startMonthInput.value = startMonth;
+      updateSimulatorRealtime('input-loan-start-month');
     });
   }
 
-  // Preset buttons
+  // Preset buttons (Amount, Share, Duration, Start Month)
   document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (btn.dataset.start) {
+        const now = new Date();
+        const curY = now.getFullYear();
+        const curM = String(now.getMonth() + 1).padStart(2, '0');
+        if (btn.dataset.start === 'current') {
+          appState.simulator.startMonth = `${curY}-${curM}`;
+        } else if (btn.dataset.start === '6m') {
+          const d = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+          appState.simulator.startMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        } else if (btn.dataset.start === '8m') {
+          appState.simulator.startMonth = '2026-03';
+        } else if (btn.dataset.start === '1y') {
+          const d = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1);
+          appState.simulator.startMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        } else if (btn.dataset.start === 'jan24') {
+          appState.simulator.startMonth = '2024-01';
+        }
+        delete appState.simulator.monthsPaid;
+        if (startMonthInput) startMonthInput.value = appState.simulator.startMonth;
+        updateSimulatorRealtime('input-loan-start-month');
+        return;
+      }
+
       const target = btn.dataset.target || (btn.dataset.amount ? 'amount' : null);
       const val = Number(btn.dataset.val || btn.dataset.amount);
 

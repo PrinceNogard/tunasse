@@ -26,6 +26,29 @@ class LoanCalculator
     }
 
     /**
+     * Compute elapsed months between a start month (YYYY-MM) and target month (default current month)
+     */
+    public static function computeElapsedMonths(string $startMonth, ?string $currentMonth = null): int
+    {
+        if (empty($startMonth)) {
+            return 0;
+        }
+        $currentMonth = $currentMonth ?: date('Y-m');
+
+        $startParts = explode('-', $startMonth);
+        $currParts = explode('-', $currentMonth);
+
+        $startYear = (int)($startParts[0] ?? 2026);
+        $startM = (int)($startParts[1] ?? 1);
+
+        $currYear = (int)($currParts[0] ?? 2026);
+        $currM = (int)($currParts[1] ?? 1);
+
+        $diff = ($currYear - $startYear) * 12 + ($currM - $startM) + 1;
+        return max(0, $diff);
+    }
+
+    /**
      * Calculate loan metrics from simulator array
      */
     public static function calculate(array $simulator = []): array
@@ -34,8 +57,11 @@ class LoanCalculator
         $userShare = (float)($simulator['userShare'] ?? 50.0);
         $durationYears = (int)($simulator['durationYears'] ?? 15);
         $interestRate = (float)($simulator['interestRate'] ?? 0.0);
-        $monthsPaidInput = (int)($simulator['monthsPaid'] ?? 0);
         $startMonth = (string)($simulator['startMonth'] ?? '2026-03');
+        $autoElapsed = self::computeElapsedMonths($startMonth, $simulator['currentMonth'] ?? null);
+        $monthsPaidInput = isset($simulator['monthsPaid']) && $simulator['monthsPaid'] !== ''
+            ? (int)$simulator['monthsPaid']
+            : $autoElapsed;
         $method = (string)($simulator['method'] ?? 'offset');
         $borrowerId = (string)($simulator['borrowerId'] ?? 'p1');
         $lenderId = (string)($simulator['lenderId'] ?? 'p2');

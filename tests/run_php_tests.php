@@ -82,6 +82,10 @@ MiniAssert::same(180, $simMetrics['totalMonths'], 'Simulator total months');
 MiniAssert::floatNear(69.44, $simMetrics['monthlyPayment'], 0.01, 'Simulator monthly payment');
 MiniAssert::floatNear(555.56, $simMetrics['capitalPaidSoFar'], 0.02, 'Simulator capital paid so far');
 MiniAssert::floatNear(11944.44, $simMetrics['remainingCapital'], 0.02, 'Simulator remaining capital');
+MiniAssert::same(8, LoanCalculator::computeElapsedMonths('2026-03', '2026-10'), 'Elapsed months 2026-03 to 2026-10');
+MiniAssert::same(12, LoanCalculator::computeElapsedMonths('2025-10', '2026-09'), 'Elapsed months 2025-10 to 2026-09');
+MiniAssert::same(0, LoanCalculator::computeElapsedMonths('2027-01', '2026-10'), 'Future start month yields 0 elapsed');
+
 
 // 3. Budget Engine Tests
 echo "\n▶ Budget Engine Tests:\n";

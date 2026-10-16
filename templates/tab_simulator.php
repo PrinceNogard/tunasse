@@ -23,7 +23,7 @@ $schedule = LoanCalculator::generateAmortizationSchedule(
           <div class="badge-amber">Moteur de calcul PHP & Temps Réel</div>
           <h2 class="hero-title">Simulateur Prêt Familial & Historique de Remboursement</h2>
           <p class="hero-subtitle" id="sim-hero-description">
-            Le père d'<strong><?= htmlspecialchars($p2['name']) ?></strong> lui a donné <strong><?= Format::currency($sim['totalAmount'] ?? 25000) ?></strong> en apport. <strong><?= htmlspecialchars($p1['name']) ?></strong> s'est engagé à lui rembourser la moitié (<?= (int)($sim['userShare'] ?? 50) ?>% = <?= Format::currency($simulator['borrowedAmount'] ?? 12500) ?>) sur <strong><?= (int)($sim['durationYears'] ?? 15) ?> ans</strong> (<?= (int)($simulator['durationMonths'] ?? 180) ?> mois, même durée que le prêt bancaire). Définis ton <strong>mois de départ</strong> pour suivre précisément ce qui a déjà été versé et ce qu'il reste à rembourser.
+            Prêt familial de <strong><?= Format::currency($sim['totalAmount'] ?? 25000) ?></strong> consenti par <strong><?= htmlspecialchars($p2['name']) ?></strong>. <strong><?= htmlspecialchars($p1['name']) ?></strong> rembourse sa part (<?= (int)($sim['userShare'] ?? 50) ?>% = <?= Format::currency($simulator['borrowedAmount'] ?? 12500) ?>) sur <strong><?= (int)($sim['durationYears'] ?? 15) ?> ans</strong> (<?= (int)($simulator['durationMonths'] ?? 180) ?> mois). Le nombre de mensualités déjà versées est calculé automatiquement depuis la date de départ jusqu'au mois actuel.
           </p>
         </div>
 
@@ -51,7 +51,7 @@ $schedule = LoanCalculator::generateAmortizationSchedule(
                   </select>
                 </div>
                 <div class="form-field">
-                  <label for="select-loan-lender">Prêteur (qui a fourni l'apport)</label>
+                  <label for="select-loan-lender">Prêteur</label>
                   <select id="select-loan-lender" class="custom-select">
                     <option value="<?= htmlspecialchars($p2['name']) ?>" selected><?= htmlspecialchars($p2['name']) ?></option>
                     <option value="<?= htmlspecialchars($p1['name']) ?>"><?= htmlspecialchars($p1['name']) ?></option>
@@ -61,10 +61,11 @@ $schedule = LoanCalculator::generateAmortizationSchedule(
             </div>
 
             <!-- Start Month & Already Paid Section -->
+            <!-- Start Month & Automatic Deduction Section -->
             <div class="loan-start-box">
               <div class="slider-header">
                 <label for="input-loan-start-month" class="slider-label">
-                  📅 Mois de départ du remboursement
+                  📅 Date de départ du remboursement
                 </label>
                 <div class="slider-input-badge">
                   <span id="label-elapsed-months" class="text-amber font-mono" style="font-weight:700;"><?= (int)($simulator['elapsedMonths'] ?? 8) ?> mois</span>
@@ -74,19 +75,41 @@ $schedule = LoanCalculator::generateAmortizationSchedule(
 
               <div class="form-group-row mt-2">
                 <div class="form-field" style="margin-bottom:0;">
-                  <label for="input-loan-start-month" style="font-size:0.75rem; color:var(--text-dim);">Date du premier versement</label>
+                  <label for="input-loan-start-month" style="font-size:0.75rem; color:var(--text-dim);">Date du premier versement (calendrier)</label>
                   <input type="month" id="input-loan-start-month" class="custom-input" value="<?= htmlspecialchars($sim['startMonth'] ?? '2026-03') ?>">
                 </div>
                 <div class="form-field" style="margin-bottom:0;">
-                  <label style="font-size:0.75rem; color:var(--text-dim);">Compteur de mensualités payées</label>
-                  <div class="slider-input-badge" style="width:100%; justify-content:space-between; padding:6px 10px;">
-                    <span style="font-size:0.8rem; color:var(--text-muted);">Mois payés :</span>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <button type="button" class="btn-step" id="btn-step-minus" title="Moins un mois">−</button>
-                      <input type="number" id="num-months-paid" class="num-input" value="<?= (int)($simulator['elapsedMonths'] ?? 8) ?>" min="0" max="360" style="width:48px; text-align:center;">
-                      <button type="button" class="btn-step" id="btn-step-plus" title="Plus un mois">+</button>
-                    </div>
+                  <label style="font-size:0.75rem; color:var(--text-dim);">Déduction automatique</label>
+                  <div class="slider-input-badge" style="width:100%; justify-content:space-between; padding:8px 12px; background:rgba(255,255,255,0.03);">
+                    <span style="font-size:0.8rem; color:var(--text-muted);">Jusqu'au mois actuel :</span>
+                    <strong class="text-amber font-mono" id="auto-months-paid-display"><?= (int)($simulator['elapsedMonths'] ?? 8) ?> mois réglés</strong>
                   </div>
+                </div>
+              </div>
+
+              <!-- Interactive Month Calendar Selector -->
+              <div class="month-calendar-selector mt-3">
+                <div class="cal-header">
+                  <span style="font-size:0.78rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; font-weight:600;">Calendrier mensuel cliquable :</span>
+                  <div class="cal-year-nav">
+                    <button type="button" class="btn-step" id="btn-cal-year-prev" title="Année précédente">◀</button>
+                    <span id="cal-selected-year" class="font-mono text-cyan" style="font-weight:700;">2026</span>
+                    <button type="button" class="btn-step" id="btn-cal-year-next" title="Année suivante">▶</button>
+                  </div>
+                </div>
+                <div class="cal-months-grid mt-2" id="cal-months-grid">
+                  <button type="button" class="cal-month-btn" data-m="01">Jan</button>
+                  <button type="button" class="cal-month-btn" data-m="02">Fév</button>
+                  <button type="button" class="cal-month-btn active" data-m="03">Mar</button>
+                  <button type="button" class="cal-month-btn" data-m="04">Avr</button>
+                  <button type="button" class="cal-month-btn" data-m="05">Mai</button>
+                  <button type="button" class="cal-month-btn" data-m="06">Juin</button>
+                  <button type="button" class="cal-month-btn" data-m="07">Juil</button>
+                  <button type="button" class="cal-month-btn" data-m="08">Aoû</button>
+                  <button type="button" class="cal-month-btn" data-m="09">Sep</button>
+                  <button type="button" class="cal-month-btn" data-m="10">Oct</button>
+                  <button type="button" class="cal-month-btn" data-m="11">Nov</button>
+                  <button type="button" class="cal-month-btn" data-m="12">Déc</button>
                 </div>
               </div>
 
@@ -102,7 +125,7 @@ $schedule = LoanCalculator::generateAmortizationSchedule(
               <!-- Summary pill of progress -->
               <div class="loan-history-pills mt-3">
                 <div class="history-pill">
-                  <span class="history-pill-lbl">Déjà versé à <?= htmlspecialchars($p2['name']) ?></span>
+                  <span class="history-pill-lbl">Déjà versé (compte commun)</span>
                   <strong class="history-pill-val text-emerald" id="sim-paid-sum-pill"><?= Format::currency($simulator['alreadyPaid'] ?? 555.52) ?></strong>
                 </div>
                 <div class="history-pill">
