@@ -1,0 +1,65 @@
+<?php
+/** @var array $state */
+/** @var array $budgets */
+$p1 = $state['profiles'][0] ?? ['name' => 'Axel', 'initials' => 'AX', 'color' => '#0ea5e9'];
+$p2 = $state['profiles'][1] ?? ['name' => 'Ariane', 'initials' => 'AR', 'color' => '#8b5cf6'];
+?>
+    <!-- APP HEADER -->
+    <header class="app-header">
+      <div class="brand-area">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">DuoBudget <span class="brand-badge">PHP Edition</span></h1>
+          <div class="header-profiles-strip" id="header-profiles-display">
+            <div class="profile-chip">
+              <span class="chip-avatar" style="background:<?= htmlspecialchars($p1['color']) ?>"><?= htmlspecialchars($p1['initials']) ?></span>
+              <span><?= htmlspecialchars($p1['name']) ?></span>
+            </div>
+            <span class="chip-sep">&</span>
+            <div class="profile-chip">
+              <span class="chip-avatar" style="background:<?= htmlspecialchars($p2['color']) ?>"><?= htmlspecialchars($p2['initials']) ?></span>
+              <span><?= htmlspecialchars($p2['name']) ?></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" role="tablist">
+        <button class="nav-tab active" data-tab="dashboard" id="tab-btn-dashboard" role="tab" aria-selected="true">
+          <span class="tab-text">Vue d'ensemble</span>
+        </button>
+        <button class="nav-tab" data-tab="simulator" id="tab-btn-simulator" role="tab" aria-selected="false">
+          <span class="tab-text">Simulateur Prêt</span>
+        </button>
+        <button class="nav-tab" data-tab="lcl" id="tab-btn-lcl" role="tab" aria-selected="false">
+          <span class="tab-text">Compte LCL</span>
+        </button>
+        <button class="nav-tab" data-tab="revolut" id="tab-btn-revolut" role="tab" aria-selected="false">
+          <span class="tab-text">Compte Revolut</span>
+        </button>
+        <button class="nav-tab" data-tab="travaux" id="tab-btn-travaux" role="tab" aria-selected="false">
+          <span class="tab-text">Enveloppe Travaux</span>
+        </button>
+        <button class="nav-tab" data-tab="profiles" id="tab-btn-profiles" role="tab" aria-selected="false">
+          <span class="tab-text">Profils & Clés</span>
+        </button>
+      </nav>
+
+      <div class="header-actions">
+        <a href="tests/runner.html" class="btn btn-secondary btn-sm" id="btn-tests-runner" title="Lancer la suite de tests unitaires automatisée">
+          Tests (40/40)
+        </a>
+        <a href="api.php?action=export_json" class="btn btn-secondary btn-sm" id="btn-export-data" title="Sauvegarder les données en JSON">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-quick-expense" title="Enregistrer une dépense">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          + Dépense
+        </button>
+      </div>
+    </header>

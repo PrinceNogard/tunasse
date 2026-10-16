@@ -36,23 +36,32 @@ import {
 let appState = loadState(STORAGE_KEY, DEFAULT_STATE);
 let saveTimeout = null;
 
+function syncBackend() {
+  if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
+    fetch('api.php?action=import_json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(appState)
+    }).catch(err => console.warn('Backend sync warning:', err));
+  }
+}
+
 function saveStateDebounced() {
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-    } catch (e) {
-      console.error('Save failed:', e);
-    }
+    saveStateImmediate();
   }, 300);
 }
 
 function saveStateImmediate() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    }
   } catch (e) {
-    console.error('Save failed:', e);
+    console.error('LocalStorage save failed:', e);
   }
+  syncBackend();
 }
 
 function getBorrowerProfile() {

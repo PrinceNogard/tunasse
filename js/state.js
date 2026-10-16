@@ -333,6 +333,9 @@ export function validateAndMigrateState(parsed, defaultState = DEFAULT_STATE) {
  */
 export function loadState(key = STORAGE_KEY, defaultState = DEFAULT_STATE) {
   try {
+    if (typeof window !== 'undefined' && window.__INITIAL_STATE__) {
+      return validateAndMigrateState(window.__INITIAL_STATE__, defaultState);
+    }
     if (typeof localStorage !== 'undefined') {
       const raw = localStorage.getItem(key) || localStorage.getItem('duobudget_data_v3') || localStorage.getItem('duobudget_state_v3');
       if (raw) {
