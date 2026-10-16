@@ -1,0 +1,6 @@
+{
+  "chat.editing.autoAcceptDelay": 1,
+  "chat.tools.edits.autoApprove": {
+    "**/*": true
+  }
+}
