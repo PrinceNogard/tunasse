@@ -45,6 +45,33 @@ Application web moderne, fluide et réactive conçue pour la gestion financière
 - Jauges de consommation en temps réel et alertes de dépassement.
 - Saisie des dépenses avec sélection du payeur (Carte commune, Axel ou Ariane).
 
+### 5. 🔨 Enveloppe Travaux Rénovation (50 000 €) & Avances Personnelles
+- **Suivi du fonds travaux global** :
+  - **Budget initial alloué** : 50 000,00 € (prêt ou épargne dédiée travaux maison).
+  - **Montant consommé** : 13 114,85 € (26,23% engagé).
+  - **Solde restant disponible** : 36 885,15 € (73,77% disponible pour les futurs chantiers).
+- **Contrôle et équilibrage des avances personnelles** :
+  - **Avances Axel** : 5 302,00 € (40,43% des dépenses engagées).
+  - **Avances Ariane** : 7 812,85 € (59,57% des dépenses engagées).
+  - **Écart** : Ariane a avancé +2 510,85 € de plus qu'Axel.
+- **Double perspective de règlement** :
+  1. **Remboursement par le Compte Travaux (Option recommandée)** :
+     - Le compte travaux rembourse **5 302,00 € à Axel** et **7 812,85 € à Ariane**.
+     - Solde net restant après déblocage : **36 885,15 €**.
+  2. **Rééquilibrage Interne Direct Axel ↔ Ariane (si partage 50/50 sans tirage)** :
+     - Part équitable de chacun (50%) : 6 557,43 €.
+     - **Axel doit virer 1 255,43 € à Ariane**.
+- **Tableau de bord interactif des factures travaux** :
+  - *Toiture Roman Avance* : 4 302,00 € (Axel) | 4 302,00 € (Ariane) $\rightarrow$ 8 604,00 € (Non remboursé)
+  - *Toiture Roman Avance (Frais de bouche)* : 1 000,00 € (Axel) | 1 000,00 € (Ariane) $\rightarrow$ 2 000,00 € (Non remboursé)
+  - *Toiture Roman* : 0,00 € (Axel) | 1 874,85 € (Ariane) $\rightarrow$ 1 874,85 € (Non remboursé)
+  - *Acompte VMC* : 0,00 € (Axel) | 636,00 € (Ariane) $\rightarrow$ 636,00 € (Non remboursé)
+  - **Interactivité complète** :
+    - Bascule en un clic du badge `Non remboursé` $\leftrightarrow$ `✓ Remboursé`.
+    - Bouton rapide d'ajout `+ Ajouter une dépense travaux` avec aide à la répartition (50/50, 100% Axel, 100% Ariane).
+    - Modification et suppression en direct.
+    - Filtres par statut (Tous / Non remboursés / Remboursés) et recherche instantanée.
+
 ---
 
 ## 🚀 Utilisation Locale

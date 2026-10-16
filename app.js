@@ -42,6 +42,47 @@ const DEFAULT_STATE = {
     startMonth: '2026-03', // Mois de départ (Mars 2026 = 8 mois écoulés par rapport à Octobre 2026)
     monthsPaid: 8         // Nombre de mensualités déjà payées
   },
+  travauxFund: {
+    initialBudget: 50000.00,
+    items: [
+      {
+        id: 'trv-1',
+        date: '2026-10-10',
+        reason: 'Toiture Roman Avance',
+        amountAxel: 4302.00,
+        amountAriane: 4302.00,
+        reimbursed: false,
+        notes: 'Avance conjointe démarrage chantier toiture'
+      },
+      {
+        id: 'trv-2',
+        date: '2026-10-11',
+        reason: 'Toiture Roman Avance (Frais de bouche)',
+        amountAxel: 1000.00,
+        amountAriane: 1000.00,
+        reimbursed: false,
+        notes: 'Avance conjointe logistique & repas chantier'
+      },
+      {
+        id: 'trv-3',
+        date: '2026-10-14',
+        reason: 'Toiture Roman',
+        amountAxel: 0.00,
+        amountAriane: 1874.85,
+        reimbursed: false,
+        notes: 'Règlement direct effectué par Ariane'
+      },
+      {
+        id: 'trv-4',
+        date: '2026-10-15',
+        reason: 'acompte vmc',
+        amountAxel: 0.00,
+        amountAriane: 636.00,
+        reimbursed: false,
+        notes: 'Acompte installation VMC payé par Ariane'
+      }
+    ]
+  },
   lclItems: [
     {
       id: 'lcl-1',
@@ -203,7 +244,11 @@ function loadState() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed.profiles && parsed.simulator) {
-        return { ...DEFAULT_STATE, ...parsed };
+        const merged = { ...DEFAULT_STATE, ...parsed };
+        if (!merged.travauxFund || !merged.travauxFund.items || merged.travauxFund.items.length === 0) {
+          merged.travauxFund = JSON.parse(JSON.stringify(DEFAULT_STATE.travauxFund));
+        }
+        return merged;
       }
     }
   } catch (e) {
@@ -439,6 +484,90 @@ function calculateBudgets() {
       p2Rev,
       diffAmount
     }
+  };
+}
+
+function calculateTravauxMetrics() {
+  const fund = appState.travauxFund || DEFAULT_STATE.travauxFund;
+  const initialBudget = Number(fund.initialBudget) || 50000.00;
+  const items = fund.items || [];
+
+  let totalAxel = 0;
+  let totalAriane = 0;
+  let reimbursedAxel = 0;
+  let reimbursedAriane = 0;
+  let unreimbursedAxel = 0;
+  let unreimbursedAriane = 0;
+
+  items.forEach(item => {
+    const ax = Number(item.amountAxel) || 0;
+    const ar = Number(item.amountAriane) || 0;
+    totalAxel += ax;
+    totalAriane += ar;
+
+    if (item.reimbursed) {
+      reimbursedAxel += ax;
+      reimbursedAriane += ar;
+    } else {
+      unreimbursedAxel += ax;
+      unreimbursedAriane += ar;
+    }
+  });
+
+  const totalConsumed = totalAxel + totalAriane;
+  const remainingBudget = initialBudget - totalConsumed;
+  const percentageConsumed = initialBudget > 0 ? (totalConsumed / initialBudget) * 100 : 0;
+  const percentageRemaining = Math.max(0, 100 - percentageConsumed);
+
+  const axelShareOfConsumed = totalConsumed > 0 ? (totalAxel / totalConsumed) * 100 : 50;
+  const arianeShareOfConsumed = totalConsumed > 0 ? (totalAriane / totalConsumed) * 100 : 50;
+
+  const axelBudgetPct = initialBudget > 0 ? (totalAxel / initialBudget) * 100 : 0;
+  const arianeBudgetPct = initialBudget > 0 ? (totalAriane / initialBudget) * 100 : 0;
+  const remainingBudgetPct = initialBudget > 0 ? (remainingBudget / initialBudget) * 100 : 0;
+
+  // Personal advance difference (Ariane - Axel)
+  const advanceDelta = totalAriane - totalAxel;
+
+  // Rebalancing between each other (50/50 target)
+  const target50Share = totalConsumed / 2;
+  const axelOwesAriane50 = target50Share - totalAxel;
+
+  // Prorata target according to profile salaries:
+  const p1 = appState.profiles[0];
+  const p2 = appState.profiles[1];
+  const totIncome = (p1.income || 0) + (p2.income || 0);
+  const p1Ratio = totIncome > 0 ? (p1.income || 0) / totIncome : 0.5;
+  const p2Ratio = totIncome > 0 ? (p2.income || 0) / totIncome : 0.5;
+  const targetP1Share = totalConsumed * p1Ratio;
+  const axelOwesArianeProrata = targetP1Share - totalAxel;
+
+  return {
+    initialBudget,
+    items,
+    totalAxel,
+    totalAriane,
+    totalConsumed,
+    remainingBudget,
+    percentageConsumed,
+    percentageRemaining,
+    axelShareOfConsumed,
+    arianeShareOfConsumed,
+    axelBudgetPct,
+    arianeBudgetPct,
+    remainingBudgetPct,
+    reimbursedAxel,
+    reimbursedAriane,
+    unreimbursedAxel,
+    unreimbursedAriane,
+    totalUnreimbursed: unreimbursedAxel + unreimbursedAriane,
+    advanceDelta,
+    target50Share,
+    axelOwesAriane50,
+    p1Ratio,
+    p2Ratio,
+    targetP1Share,
+    axelOwesArianeProrata
   };
 }
 
@@ -718,13 +847,15 @@ function renderAmortizationTable(loan) {
 
 function renderAll() {
   const data = calculateBudgets();
+  const travaux = calculateTravauxMetrics();
 
   renderHeaderProfiles();
-  renderTopSummary(data);
-  renderDashboard(data);
+  renderTopSummary(data, travaux);
+  renderDashboard(data, travaux);
   renderSimulatorView(data);
   renderLclTab(data);
   renderRevolutTab(data);
+  renderTravauxTab(travaux);
   renderProfilesTab();
 }
 
@@ -751,7 +882,7 @@ function renderHeaderProfiles() {
   document.getElementById('lcl-avatar-p2').textContent = p2.initials || p2.name.slice(0, 2).toUpperCase();
 }
 
-function renderTopSummary(data) {
+function renderTopSummary(data, travaux) {
   document.getElementById('top-total-budget').textContent = formatCurrency(data.globalMonthlyBudget);
   document.getElementById('top-total-annual').textContent = `${formatCurrency(data.globalAnnualBudget)} / an`;
 
@@ -763,9 +894,23 @@ function renderTopSummary(data) {
   const lender = getLenderProfile();
   document.getElementById('top-repayment-monthly').textContent = `+${formatCurrency(data.loan.monthlyPayment)}`;
   document.getElementById('top-repayment-subtext').textContent = `${borrower.name} remb. ${lender.name} (${data.loan.monthsPaid}/${data.loan.totalMonths} m.)`;
+
+  const trv = travaux || calculateTravauxMetrics();
+  const topTrvTag = document.getElementById('top-travaux-tag');
+  const topTrvConsumed = document.getElementById('top-travaux-consumed');
+  const topTrvSubtext = document.getElementById('top-travaux-subtext');
+  if (topTrvTag) {
+    topTrvTag.textContent = `Reste ${Math.round(trv.remainingBudget).toLocaleString('fr-FR')} €`;
+  }
+  if (topTrvConsumed) {
+    topTrvConsumed.textContent = formatCurrency(trv.totalConsumed);
+  }
+  if (topTrvSubtext) {
+    topTrvSubtext.textContent = `consommé sur ${formatCurrency(trv.initialBudget)}`;
+  }
 }
 
-function renderDashboard(data) {
+function renderDashboard(data, travaux) {
   const { lclTotal, revolutBudgetTotal, globalMonthlyBudget, lclAnnual, revolutAnnual, globalAnnualBudget } = data;
 
   updateDashboardCoupleCards(data);
@@ -775,6 +920,7 @@ function renderDashboard(data) {
   document.getElementById('forecast-total-annual').textContent = formatCurrency(globalAnnualBudget);
 
   renderDonutChart(lclTotal, revolutBudgetTotal, globalMonthlyBudget);
+  renderTravauxDashboardWidget(travaux || calculateTravauxMetrics());
   renderRecentExpensesTable();
 }
 
@@ -1144,6 +1290,224 @@ function renderProfilesTab() {
 }
 
 // ============================================================
+// ENVELOPPE TRAVAUX & AVANCES RENDERERS
+// ============================================================
+
+let activeTravauxSearch = '';
+let activeTravauxFilter = 'all'; // 'all', 'unreimbursed', 'reimbursed'
+
+function renderTravauxDashboardWidget(m) {
+  const dashBudget = document.getElementById('dash-trv-budget');
+  if (!dashBudget) return;
+
+  dashBudget.textContent = formatCurrency(m.initialBudget);
+  document.getElementById('dash-trv-consumed').textContent = formatCurrency(m.totalConsumed);
+  document.getElementById('dash-trv-consumed-pct').textContent = `${m.percentageConsumed.toFixed(1)}% du budget`;
+  document.getElementById('dash-trv-remaining').textContent = formatCurrency(m.remainingBudget);
+  document.getElementById('dash-trv-remaining-pct').textContent = `${m.percentageRemaining.toFixed(1)}% restant`;
+
+  document.getElementById('dash-trv-p1').textContent = `Axel : ${formatCurrency(m.totalAxel)}`;
+  document.getElementById('dash-trv-p2').textContent = `Ariane : ${formatCurrency(m.totalAriane)}`;
+
+  const deltaEl = document.getElementById('dash-trv-delta');
+  if (m.advanceDelta >= 0) {
+    deltaEl.textContent = `Ariane a avancé +${formatCurrency(m.advanceDelta)}`;
+    deltaEl.className = 'stat-subtext text-emerald';
+  } else {
+    deltaEl.textContent = `Axel a avancé +${formatCurrency(Math.abs(m.advanceDelta))}`;
+    deltaEl.className = 'stat-subtext text-cyan';
+  }
+
+  const barAxel = document.getElementById('dash-trv-bar-axel');
+  const barAriane = document.getElementById('dash-trv-bar-ariane');
+  if (barAxel) barAxel.style.width = `${m.axelBudgetPct.toFixed(2)}%`;
+  if (barAriane) barAriane.style.width = `${m.arianeBudgetPct.toFixed(2)}%`;
+
+  document.getElementById('dash-trv-legend-axel').textContent = formatCurrency(m.totalAxel);
+  document.getElementById('dash-trv-legend-ariane').textContent = formatCurrency(m.totalAriane);
+  document.getElementById('dash-trv-legend-rem').textContent = formatCurrency(m.remainingBudget);
+}
+
+function renderTravauxTab(m) {
+  const trvPane = document.getElementById('pane-travaux');
+  if (!trvPane) return;
+
+  // KPI cards
+  document.getElementById('trv-kpi-total-budget').textContent = formatCurrency(m.initialBudget);
+  document.getElementById('trv-kpi-consumed').textContent = formatCurrency(m.totalConsumed);
+  document.getElementById('trv-kpi-consumed-badge').textContent = `${m.percentageConsumed.toFixed(1)}% engagé`;
+  document.getElementById('trv-kpi-items-count').textContent = `Sur ${m.items.length} factures / acomptes`;
+
+  document.getElementById('trv-kpi-remaining').textContent = formatCurrency(m.remainingBudget);
+  document.getElementById('trv-kpi-remaining-badge').textContent = `${m.percentageRemaining.toFixed(1)}% dispo`;
+
+  const deltaValEl = document.getElementById('trv-kpi-delta');
+  const deltaSubEl = document.getElementById('trv-kpi-delta-sub');
+  if (m.advanceDelta >= 0) {
+    deltaValEl.textContent = `+${formatCurrency(m.advanceDelta)}`;
+    deltaValEl.className = 'kpi-value font-mono text-violet';
+    deltaSubEl.textContent = "Ariane a avancé plus qu'Axel";
+  } else {
+    deltaValEl.textContent = `+${formatCurrency(Math.abs(m.advanceDelta))}`;
+    deltaValEl.className = 'kpi-value font-mono text-cyan';
+    deltaSubEl.textContent = "Axel a avancé plus qu'Ariane";
+  }
+
+  // Visual Multi-segment Progress Bar
+  document.getElementById('trv-visual-status').textContent = 
+    `${formatCurrency(m.totalConsumed)} consommés • ${formatCurrency(m.remainingBudget)} disponibles`;
+
+  const barAxel = document.getElementById('trv-bar-axel');
+  const barAriane = document.getElementById('trv-bar-ariane');
+  const barRem = document.getElementById('trv-bar-remaining');
+  if (barAxel) barAxel.style.width = `${m.axelBudgetPct.toFixed(2)}%`;
+  if (barAriane) barAriane.style.width = `${m.arianeBudgetPct.toFixed(2)}%`;
+  if (barRem) barRem.style.width = `${Math.max(0, m.remainingBudgetPct).toFixed(2)}%`;
+
+  document.getElementById('trv-legend-axel-val').textContent = formatCurrency(m.totalAxel);
+  document.getElementById('trv-legend-axel-pct').textContent = 
+    `${m.axelShareOfConsumed.toFixed(1)}% du consommé • ${m.axelBudgetPct.toFixed(1)}% du budget`;
+
+  document.getElementById('trv-legend-ariane-val').textContent = formatCurrency(m.totalAriane);
+  document.getElementById('trv-legend-ariane-pct').textContent = 
+    `${m.arianeShareOfConsumed.toFixed(1)}% du consommé • ${m.arianeBudgetPct.toFixed(1)}% du budget`;
+
+  document.getElementById('trv-legend-rem-val').textContent = formatCurrency(m.remainingBudget);
+  document.getElementById('trv-legend-rem-pct').textContent = 
+    `${m.percentageRemaining.toFixed(1)}% du budget restant`;
+
+  // Settlement Card 1: Bank / Joint Travaux Fund Reimbursement
+  document.getElementById('trv-reimburse-axel').textContent = formatCurrency(m.totalAxel);
+  document.getElementById('trv-reimburse-axel-status').textContent = 
+    m.unreimbursedAxel > 0 ? `À percevoir : ${formatCurrency(m.unreimbursedAxel)}` : '✓ Entièrement remboursé';
+
+  document.getElementById('trv-reimburse-ariane').textContent = formatCurrency(m.totalAriane);
+  document.getElementById('trv-reimburse-ariane-status').textContent = 
+    m.unreimbursedAriane > 0 ? `À percevoir : ${formatCurrency(m.unreimbursedAriane)}` : '✓ Entièrement remboursé';
+
+  document.getElementById('trv-reimburse-total').textContent = formatCurrency(m.totalConsumed);
+  document.getElementById('trv-reimburse-after-rem').textContent = formatCurrency(m.remainingBudget);
+
+  // Settlement Card 2: Direct Partner-to-Partner
+  document.getElementById('trv-eq-target-50').textContent = formatCurrency(m.target50Share);
+  
+  const diffAxel50 = m.axelOwesAriane50;
+  const eqAxelEl = document.getElementById('trv-eq-paid-axel');
+  const eqArianeEl = document.getElementById('trv-eq-paid-ariane');
+  if (diffAxel50 > 0.005) {
+    eqAxelEl.innerHTML = `${formatCurrency(m.totalAxel)} <small class="text-rose">(-${formatCurrency(diffAxel50)})</small>`;
+    eqArianeEl.innerHTML = `${formatCurrency(m.totalAriane)} <small class="text-emerald">(+${formatCurrency(diffAxel50)})</small>`;
+    document.getElementById('trv-eq-verdict-text').innerHTML = 
+      `<strong>Axel doit virer ${formatCurrency(diffAxel50)} à Ariane</strong> pour atteindre une égalité parfaite (${formatCurrency(m.target50Share)} chacun).`;
+  } else if (diffAxel50 < -0.005) {
+    const oweAriane = Math.abs(diffAxel50);
+    eqAxelEl.innerHTML = `${formatCurrency(m.totalAxel)} <small class="text-emerald">(+${formatCurrency(oweAriane)})</small>`;
+    eqArianeEl.innerHTML = `${formatCurrency(m.totalAriane)} <small class="text-rose">(-${formatCurrency(oweAriane)})</small>`;
+    document.getElementById('trv-eq-verdict-text').innerHTML = 
+      `<strong>Ariane doit virer ${formatCurrency(oweAriane)} à Axel</strong> pour atteindre une égalité parfaite (${formatCurrency(m.target50Share)} chacun).`;
+  } else {
+    eqAxelEl.innerHTML = `${formatCurrency(m.totalAxel)} <small class="text-emerald">(Égalité)</small>`;
+    eqArianeEl.innerHTML = `${formatCurrency(m.totalAriane)} <small class="text-emerald">(Égalité)</small>`;
+    document.getElementById('trv-eq-verdict-text').innerHTML = 
+      `<strong>Parité parfaite !</strong> Axel et Ariane ont chacun avancé exactement la même somme (${formatCurrency(m.target50Share)}).`;
+  }
+
+  renderTravauxTable(m);
+}
+
+function renderTravauxTable(m) {
+  const tbody = document.getElementById('travaux-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const countAll = document.getElementById('count-trv-all');
+  const countUnreimbursed = document.getElementById('count-trv-unreimbursed');
+  const countReimbursed = document.getElementById('count-trv-reimbursed');
+
+  const unreimbursedCount = m.items.filter(x => !x.reimbursed).length;
+  const reimbursedCount = m.items.filter(x => x.reimbursed).length;
+
+  if (countAll) countAll.textContent = m.items.length;
+  if (countUnreimbursed) countUnreimbursed.textContent = unreimbursedCount;
+  if (countReimbursed) countReimbursed.textContent = reimbursedCount;
+
+  const q = activeTravauxSearch.toLowerCase().trim();
+  const filtered = m.items.filter(item => {
+    if (activeTravauxFilter === 'unreimbursed' && item.reimbursed) return false;
+    if (activeTravauxFilter === 'reimbursed' && !item.reimbursed) return false;
+    if (q) {
+      const matchReason = (item.reason || '').toLowerCase().includes(q);
+      const matchNotes = (item.notes || '').toLowerCase().includes(q);
+      return matchReason || matchNotes;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center text-dim" style="padding: 28px;">
+          Aucune dépense travaux ne correspond aux critères de recherche.
+        </td>
+      </tr>
+    `;
+  } else {
+    filtered.forEach(item => {
+      const totalItem = (Number(item.amountAxel) || 0) + (Number(item.amountAriane) || 0);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="white-space: nowrap; font-size:0.85rem;">${formatDateFR(item.date)}</td>
+        <td>
+          <div style="font-weight: 700; color: #ffffff;">${item.reason}</div>
+          ${item.notes ? `<div style="font-size:0.75rem; color:var(--text-dim);">${item.notes}</div>` : ''}
+        </td>
+        <td class="text-right font-mono" style="font-weight: 700; color: ${item.amountAxel > 0 ? '#38bdf8' : 'var(--text-dim)'};">
+          ${item.amountAxel > 0 ? formatCurrency(item.amountAxel) : '—'}
+        </td>
+        <td class="text-right font-mono" style="font-weight: 700; color: ${item.amountAriane > 0 ? '#c084fc' : 'var(--text-dim)'};">
+          ${item.amountAriane > 0 ? formatCurrency(item.amountAriane) : '—'}
+        </td>
+        <td class="text-right font-mono" style="font-weight: 800; font-size: 0.95rem; color: #ffffff;">
+          ${formatCurrency(totalItem)}
+        </td>
+        <td class="text-center">
+          <button type="button" class="reimbursed-toggle-btn ${item.reimbursed ? 'status-yes' : 'status-no'} btn-toggle-reimbursed" data-id="${item.id}" title="Cliquez pour changer le statut de remboursement">
+            ${item.reimbursed ? '✓ Remboursé' : 'Non remboursé'}
+          </button>
+        </td>
+        <td class="text-center">
+          <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+            <button type="button" class="lcl-actions-btn btn-edit-trv" data-id="${item.id}" title="Modifier">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+            <button type="button" class="delete-btn btn-delete-trv" data-id="${item.id}" title="Supprimer">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Footer summary
+  document.getElementById('tfoot-axel-total').textContent = formatCurrency(m.totalAxel);
+  document.getElementById('tfoot-ariane-total').textContent = formatCurrency(m.totalAriane);
+  document.getElementById('tfoot-consumed-total').textContent = formatCurrency(m.totalConsumed);
+  document.getElementById('tfoot-remaining-total').textContent = formatCurrency(m.remainingBudget);
+
+  const initialDisp = document.getElementById('tfoot-initial-display');
+  const consumedDisp = document.getElementById('tfoot-consumed-display');
+  if (initialDisp) initialDisp.textContent = formatCurrency(m.initialBudget);
+  if (consumedDisp) consumedDisp.textContent = formatCurrency(m.totalConsumed);
+
+  const footStatus = document.getElementById('tfoot-status-summary');
+  if (footStatus) {
+    footStatus.textContent = `${unreimbursedCount} non remboursé${unreimbursedCount > 1 ? 's' : ''}`;
+  }
+}
+
+// ============================================================
 // 5. EVENT LISTENERS & LIVE CONTROLS
 // ============================================================
 
@@ -1177,6 +1541,25 @@ document.addEventListener('DOMContentLoaded', () => {
   if (quickEqualizerCard) {
     quickEqualizerCard.addEventListener('click', () => {
       document.getElementById('tab-btn-simulator').click();
+    });
+  }
+  const quickTravauxCard = document.getElementById('card-quick-travaux');
+  if (quickTravauxCard) {
+    quickTravauxCard.addEventListener('click', () => {
+      document.getElementById('tab-btn-travaux').click();
+    });
+  }
+  const jumpToTravauxBtn = document.getElementById('btn-jump-to-travaux');
+  if (jumpToTravauxBtn) {
+    jumpToTravauxBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('tab-btn-travaux').click();
+    });
+  }
+  const dashTravauxCard = document.getElementById('dash-travaux-card');
+  if (dashTravauxCard) {
+    dashTravauxCard.addEventListener('click', () => {
+      document.getElementById('tab-btn-travaux').click();
     });
   }
   document.getElementById('btn-view-all-expenses').addEventListener('click', () => {
@@ -1600,6 +1983,226 @@ document.addEventListener('DOMContentLoaded', () => {
       saveStateImmediate();
       renderAll();
     }
+  });
+
+  // ==========================================================
+  // TRAVAUX & AVANCES EVENT HANDLERS
+  // ==========================================================
+  const travauxModal = document.getElementById('travaux-modal');
+  const btnOpenTravauxModal = document.getElementById('btn-open-travaux-modal');
+  const btnAddTravauxRow = document.getElementById('btn-add-travaux-row');
+  const btnCloseTravauxModal = document.getElementById('btn-close-travaux-modal');
+  const btnCancelTravauxModal = document.getElementById('btn-cancel-travaux-modal');
+  const travauxForm = document.getElementById('travaux-form');
+
+  function openTravauxModal(item = null) {
+    travauxForm.reset();
+    const modalTitle = document.getElementById('travaux-modal-title');
+    const p1 = appState.profiles[0];
+    const p2 = appState.profiles[1];
+
+    document.getElementById('modal-trv-axel-label').textContent = `Avance ${p1.name} (€)`;
+    document.getElementById('modal-trv-ariane-label').textContent = `Avance ${p2.name} (€)`;
+    document.getElementById('btn-split-100-axel').textContent = `100% ${p1.name}`;
+    document.getElementById('btn-split-100-ariane').textContent = `100% ${p2.name}`;
+
+    if (item) {
+      modalTitle.textContent = 'Modifier la dépense travaux';
+      document.getElementById('modal-trv-id').value = item.id;
+      document.getElementById('modal-trv-reason').value = item.reason || '';
+      document.getElementById('modal-trv-date').value = item.date || new Date().toISOString().slice(0, 10);
+      document.getElementById('modal-trv-reimbursed').value = item.reimbursed ? 'true' : 'false';
+      document.getElementById('modal-trv-axel').value = (Number(item.amountAxel) || 0).toFixed(2);
+      document.getElementById('modal-trv-ariane').value = (Number(item.amountAriane) || 0).toFixed(2);
+      document.getElementById('modal-trv-notes').value = item.notes || '';
+    } else {
+      modalTitle.textContent = 'Ajouter une dépense travaux';
+      document.getElementById('modal-trv-id').value = '';
+      document.getElementById('modal-trv-date').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('modal-trv-reimbursed').value = 'false';
+      document.getElementById('modal-trv-axel').value = '0.00';
+      document.getElementById('modal-trv-ariane').value = '0.00';
+      document.getElementById('modal-trv-notes').value = '';
+    }
+
+    travauxModal.style.display = 'flex';
+  }
+
+  function closeTravauxModal() {
+    travauxModal.style.display = 'none';
+  }
+
+  if (btnOpenTravauxModal) btnOpenTravauxModal.addEventListener('click', () => openTravauxModal());
+  if (btnAddTravauxRow) btnAddTravauxRow.addEventListener('click', () => openTravauxModal());
+  if (btnCloseTravauxModal) btnCloseTravauxModal.addEventListener('click', closeTravauxModal);
+  if (btnCancelTravauxModal) btnCancelTravauxModal.addEventListener('click', closeTravauxModal);
+
+  // Quick split buttons
+  document.getElementById('btn-split-50-trv').addEventListener('click', () => {
+    const ax = parseFloat(document.getElementById('modal-trv-axel').value) || 0;
+    const ar = parseFloat(document.getElementById('modal-trv-ariane').value) || 0;
+    let sum = ax + ar;
+    if (sum === 0) {
+      const asked = prompt('Montant total de la dépense travaux à diviser 50/50 (€) :', '1000');
+      sum = parseFloat(asked) || 0;
+    }
+    const half = (sum / 2).toFixed(2);
+    document.getElementById('modal-trv-axel').value = half;
+    document.getElementById('modal-trv-ariane').value = half;
+  });
+
+  document.getElementById('btn-split-100-axel').addEventListener('click', () => {
+    const ax = parseFloat(document.getElementById('modal-trv-axel').value) || 0;
+    const ar = parseFloat(document.getElementById('modal-trv-ariane').value) || 0;
+    const sum = ax + ar;
+    document.getElementById('modal-trv-axel').value = sum.toFixed(2);
+    document.getElementById('modal-trv-ariane').value = '0.00';
+  });
+
+  document.getElementById('btn-split-100-ariane').addEventListener('click', () => {
+    const ax = parseFloat(document.getElementById('modal-trv-axel').value) || 0;
+    const ar = parseFloat(document.getElementById('modal-trv-ariane').value) || 0;
+    const sum = ax + ar;
+    document.getElementById('modal-trv-axel').value = '0.00';
+    document.getElementById('modal-trv-ariane').value = sum.toFixed(2);
+  });
+
+  // Submit Travaux item
+  travauxForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const trvId = document.getElementById('modal-trv-id').value;
+    const reasonVal = document.getElementById('modal-trv-reason').value.trim();
+    const dateVal = document.getElementById('modal-trv-date').value;
+    const reimbursedVal = (document.getElementById('modal-trv-reimbursed').value === 'true');
+    const axelVal = parseFloat(document.getElementById('modal-trv-axel').value) || 0;
+    const arianeVal = parseFloat(document.getElementById('modal-trv-ariane').value) || 0;
+    const notesVal = document.getElementById('modal-trv-notes').value.trim();
+
+    if (!appState.travauxFund) {
+      appState.travauxFund = JSON.parse(JSON.stringify(DEFAULT_STATE.travauxFund));
+    }
+
+    if (trvId) {
+      // Edit existing
+      const target = appState.travauxFund.items.find(x => x.id === trvId);
+      if (target) {
+        target.reason = reasonVal;
+        target.date = dateVal;
+        target.reimbursed = reimbursedVal;
+        target.amountAxel = axelVal;
+        target.amountAriane = arianeVal;
+        target.notes = notesVal;
+      }
+    } else {
+      // Add new
+      const newItem = {
+        id: 'trv-' + Date.now(),
+        reason: reasonVal,
+        date: dateVal,
+        reimbursed: reimbursedVal,
+        amountAxel: axelVal,
+        amountAriane: arianeVal,
+        notes: notesVal
+      };
+      appState.travauxFund.items.push(newItem);
+    }
+
+    saveStateImmediate();
+    closeTravauxModal();
+    renderAll();
+  });
+
+  // Travaux actions: toggle reimbursed, edit, delete
+  document.addEventListener('click', (e) => {
+    // Toggle reimbursed button
+    const toggleBtn = e.target.closest('.btn-toggle-reimbursed');
+    if (toggleBtn) {
+      const trvId = toggleBtn.dataset.id;
+      const target = (appState.travauxFund?.items || []).find(x => x.id === trvId);
+      if (target) {
+        target.reimbursed = !target.reimbursed;
+        saveStateImmediate();
+        renderAll();
+      }
+      return;
+    }
+
+    // Edit Travaux row
+    const editBtn = e.target.closest('.btn-edit-trv');
+    if (editBtn) {
+      const trvId = editBtn.dataset.id;
+      const target = (appState.travauxFund?.items || []).find(x => x.id === trvId);
+      if (target) {
+        openTravauxModal(target);
+      }
+      return;
+    }
+
+    // Delete Travaux row
+    const delBtn = e.target.closest('.btn-delete-trv');
+    if (delBtn) {
+      const trvId = delBtn.dataset.id;
+      if (confirm('Voulez-vous supprimer cette ligne de travaux ?')) {
+        appState.travauxFund.items = appState.travauxFund.items.filter(x => x.id !== trvId);
+        saveStateImmediate();
+        renderAll();
+      }
+      return;
+    }
+  });
+
+  // Budget envelope modal
+  const budgetModal = document.getElementById('travaux-budget-modal');
+  const btnEditBudget = document.getElementById('btn-edit-travaux-budget');
+  const btnCloseBudget = document.getElementById('btn-close-budget-modal');
+  const btnCancelBudget = document.getElementById('btn-cancel-budget-modal');
+  const budgetForm = document.getElementById('travaux-budget-form');
+  const inputBudgetVal = document.getElementById('modal-budget-val');
+
+  if (btnEditBudget) {
+    btnEditBudget.addEventListener('click', () => {
+      inputBudgetVal.value = appState.travauxFund?.initialBudget || 50000;
+      budgetModal.style.display = 'flex';
+    });
+  }
+  if (btnCloseBudget) btnCloseBudget.addEventListener('click', () => budgetModal.style.display = 'none');
+  if (btnCancelBudget) btnCancelBudget.addEventListener('click', () => budgetModal.style.display = 'none');
+
+  if (budgetForm) {
+    budgetForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const newBudget = parseFloat(inputBudgetVal.value) || 50000;
+      if (!appState.travauxFund) {
+        appState.travauxFund = JSON.parse(JSON.stringify(DEFAULT_STATE.travauxFund));
+      }
+      appState.travauxFund.initialBudget = newBudget;
+      saveStateImmediate();
+      budgetModal.style.display = 'none';
+      renderAll();
+    });
+  }
+
+  // Travaux table search & filters
+  const trvSearchInput = document.getElementById('travaux-search-input');
+  if (trvSearchInput) {
+    trvSearchInput.addEventListener('input', (e) => {
+      activeTravauxSearch = e.target.value;
+      renderTravauxTable(calculateTravauxMetrics());
+    });
+  }
+
+  const filterTrvAll = document.getElementById('filter-trv-all');
+  const filterTrvUnreimbursed = document.getElementById('filter-trv-unreimbursed');
+  const filterTrvReimbursed = document.getElementById('filter-trv-reimbursed');
+  const filterPills = [filterTrvAll, filterTrvUnreimbursed, filterTrvReimbursed].filter(Boolean);
+
+  filterPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      filterPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      activeTravauxFilter = pill.dataset.filter || 'all';
+      renderTravauxTable(calculateTravauxMetrics());
+    });
   });
 
   // ==========================================================

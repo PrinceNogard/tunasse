@@ -46,6 +46,11 @@
           <span class="tab-icon">💳</span>
           <span class="tab-text">Compte Revolut <small>(Vie courante)</small></span>
         </button>
+        <button class="nav-tab" data-tab="travaux" id="tab-btn-travaux" role="tab" aria-selected="false">
+          <span class="tab-icon">🔨</span>
+          <span class="tab-text">Enveloppe Travaux <small>(50 000 €)</small></span>
+          <span class="pulse-dot" style="background:#10b981; box-shadow:0 0 8px #10b981;" title="Avances et solde travaux"></span>
+        </button>
         <button class="nav-tab" data-tab="profiles" id="tab-btn-profiles" role="tab" aria-selected="false">
           <span class="tab-icon">👥</span>
           <span class="tab-text">Profils & Clés</span>
@@ -116,6 +121,20 @@
           </div>
           <span class="stat-value text-amber" id="top-repayment-monthly">+69,44 €</span>
           <span class="stat-subtext" id="top-repayment-subtext">Axel rembourse Ariane</span>
+        </div>
+      </div>
+
+      <div class="summary-card stat-travaux clickable" id="card-quick-travaux" title="Cliquez pour ouvrir l'enveloppe travaux 50 000 €">
+        <div class="card-icon-wrapper emerald">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m14.7 6.3 3 3-9.4 9.4H5.3v-3l9.4-9.4z"/><path d="m18 3 3 3-2 2-3-3z"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-header-row">
+            <span class="stat-label">Enveloppe Travaux</span>
+            <span class="bank-tag emerald-tag" id="top-travaux-tag">Reste 36 885 €</span>
+          </div>
+          <span class="stat-value text-emerald" id="top-travaux-consumed">13 114,85 €</span>
+          <span class="stat-subtext" id="top-travaux-subtext">consommé sur 50 000,00 €</span>
         </div>
       </div>
     </section>
@@ -269,6 +288,54 @@
                   <span class="forecast-val" id="forecast-total-annual">0,00 €</span>
                 </div>
               </div>
+            </div>
+          </div>
+        <!-- Travaux Quick Snapshot in Dashboard -->
+        <div class="glass-card mt-6 clickable" id="dash-travaux-card" title="Cliquez pour ouvrir l'enveloppe travaux">
+          <div class="card-header">
+            <div>
+              <div class="badge-emerald mb-2">🔨 Rénovation & Chantier Maison</div>
+              <h2 class="card-title">Enveloppe Travaux Commune (50 000,00 €)</h2>
+              <p class="card-subtitle">Suivi du fonds travaux, des factures payées et des avances personnelles de chaque conjoint</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-jump-to-travaux">Ouvrir l'espace travaux →</button>
+          </div>
+
+          <div class="travaux-dash-grid">
+            <div class="travaux-dash-stat">
+              <span class="stat-label">Solde Initial Travaux</span>
+              <span class="stat-value" id="dash-trv-budget">50 000,00 €</span>
+              <span class="stat-subtext">Fonds disponible</span>
+            </div>
+            <div class="travaux-dash-stat">
+              <span class="stat-label">Consommé Réel</span>
+              <span class="stat-value text-amber" id="dash-trv-consumed">13 114,85 €</span>
+              <span class="stat-subtext" id="dash-trv-consumed-pct">26,23% du budget</span>
+            </div>
+            <div class="travaux-dash-stat">
+              <span class="stat-label">Solde Restant</span>
+              <span class="stat-value text-emerald" id="dash-trv-remaining">36 885,15 €</span>
+              <span class="stat-subtext" id="dash-trv-remaining-pct">73,77% restant</span>
+            </div>
+            <div class="travaux-dash-stat">
+              <span class="stat-label">Avances Personnelles</span>
+              <div class="dash-advances-pills">
+                <span class="partner-pill p1-pill" id="dash-trv-p1">Axel : 5 302,00 €</span>
+                <span class="partner-pill p2-pill" id="dash-trv-p2">Ariane : 7 812,85 €</span>
+              </div>
+              <span class="stat-subtext text-emerald" id="dash-trv-delta">Ariane a avancé +2 510,85 €</span>
+            </div>
+          </div>
+
+          <div class="travaux-progress-bar-container mt-4">
+            <div class="travaux-progress-bar">
+              <div class="travaux-bar-segment segment-axel" id="dash-trv-bar-axel" style="width: 10.60%;" title="Avance Axel : 5 302,00 €"></div>
+              <div class="travaux-bar-segment segment-ariane" id="dash-trv-bar-ariane" style="width: 15.63%;" title="Avance Ariane : 7 812,85 €"></div>
+            </div>
+            <div class="travaux-progress-legend">
+              <span class="legend-chip"><span class="chip-dot dot-cyan"></span> Axel : <strong id="dash-trv-legend-axel">5 302,00 €</strong> (40,4%)</span>
+              <span class="legend-chip"><span class="chip-dot dot-violet"></span> Ariane : <strong id="dash-trv-legend-ariane">7 812,85 €</strong> (59,6%)</span>
+              <span class="legend-chip"><span class="chip-dot dot-slate"></span> Restant : <strong id="dash-trv-legend-rem">36 885,15 €</strong> (73,8%)</span>
             </div>
           </div>
         </div>
@@ -876,6 +943,259 @@
         </div>
       </section>
 
+      <!-- ================= TAB: ENVELOPPE TRAVAUX & AVANCES (50 000 €) ================= -->
+      <section class="tab-pane" id="pane-travaux">
+        <!-- Hero Header -->
+        <div class="travaux-hero-banner glass-card">
+          <div class="travaux-hero-content">
+            <div class="travaux-hero-left">
+              <div class="badge-emerald mb-2">🔨 Financement & Rénovation Maison</div>
+              <h2 class="card-title" style="font-size:1.4rem;">Enveloppe Travaux Rénovation</h2>
+              <p class="card-subtitle">
+                Suivi du compte travaux commun de <strong>50 000,00 €</strong>, contrôle des dépenses engagées et rééquilibrage automatisé des avances personnelles entre <strong>Axel</strong> et <strong>Ariane</strong>.
+              </p>
+            </div>
+            <div class="travaux-hero-actions">
+              <button class="btn btn-primary" id="btn-open-travaux-modal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                + Ajouter une dépense travaux
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-edit-travaux-budget" title="Modifier le montant total de l'enveloppe (actuellement 50 000 €)">
+                ⚙️ Ajuster l'enveloppe
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 KPI Cards -->
+          <div class="travaux-kpi-grid mt-6">
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Solde Initial Travaux</span>
+                <span class="bank-tag lcl-tag">Fonds Dédié</span>
+              </div>
+              <div class="kpi-value font-mono" id="trv-kpi-total-budget">50 000,00 €</div>
+              <span class="kpi-subtext">Financement global prévu</span>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Total Consommé</span>
+                <span class="bank-tag amber-tag" id="trv-kpi-consumed-badge">26,2% engagé</span>
+              </div>
+              <div class="kpi-value font-mono text-amber" id="trv-kpi-consumed">13 114,85 €</div>
+              <span class="kpi-subtext" id="trv-kpi-items-count">Sur 4 factures / acomptes</span>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Solde Restant Disponible</span>
+                <span class="bank-tag emerald-tag" id="trv-kpi-remaining-badge">73,8% dispo</span>
+              </div>
+              <div class="kpi-value font-mono text-emerald" id="trv-kpi-remaining">36 885,15 €</div>
+              <span class="kpi-subtext">Disponible pour la suite des chantiers</span>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Balance des Avances</span>
+                <span class="bank-tag rev-tag">Avances Perso</span>
+              </div>
+              <div class="kpi-value font-mono text-violet" id="trv-kpi-delta">+2 510,85 €</div>
+              <span class="kpi-subtext" id="trv-kpi-delta-sub">Ariane a avancé plus qu'Axel</span>
+            </div>
+          </div>
+
+          <!-- Visual Multi-segment Progress Bar -->
+          <div class="travaux-visual-box mt-6">
+            <div class="visual-box-header">
+              <span class="visual-box-title">Progression de l'Enveloppe (50 000,00 €)</span>
+              <span class="visual-box-status" id="trv-visual-status">13 114,85 € consommés • 36 885,15 € disponibles</span>
+            </div>
+
+            <div class="travaux-progress-bar-large">
+              <div class="travaux-bar-segment segment-axel" id="trv-bar-axel" style="width: 10.60%;" title="Avance Axel : 5 302,00 € (40,4% du consommé)"></div>
+              <div class="travaux-bar-segment segment-ariane" id="trv-bar-ariane" style="width: 15.63%;" title="Avance Ariane : 7 812,85 € (59,6% du consommé)"></div>
+              <div class="travaux-bar-segment segment-remaining" id="trv-bar-remaining" style="width: 73.77%;" title="Solde restant : 36 885,15 € (73,8%)"></div>
+            </div>
+
+            <div class="travaux-visual-legend">
+              <div class="legend-col">
+                <div class="legend-dot-label">
+                  <span class="chip-dot dot-cyan"></span>
+                  <strong>Avancé par Axel</strong>
+                </div>
+                <div class="legend-val text-cyan font-mono" id="trv-legend-axel-val">5 302,00 €</div>
+                <span class="legend-pct" id="trv-legend-axel-pct">40,43% du consommé • 10,60% du budget</span>
+              </div>
+
+              <div class="legend-col">
+                <div class="legend-dot-label">
+                  <span class="chip-dot dot-violet"></span>
+                  <strong>Avancé par Ariane</strong>
+                </div>
+                <div class="legend-val text-violet font-mono" id="trv-legend-ariane-val">7 812,85 €</div>
+                <span class="legend-pct" id="trv-legend-ariane-pct">59,57% du consommé • 15,63% du budget</span>
+              </div>
+
+              <div class="legend-col">
+                <div class="legend-dot-label">
+                  <span class="chip-dot dot-emerald"></span>
+                  <strong>Reste Disponible</strong>
+                </div>
+                <div class="legend-val text-emerald font-mono" id="trv-legend-rem-val">36 885,15 €</div>
+                <span class="legend-pct" id="trv-legend-rem-pct">73,77% du budget restant</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dual Equalization & Settlement Strategy Cards -->
+        <div class="grid-2-col mt-6">
+          <!-- Card 1: Bank / Joint Travaux Fund Reimbursement -->
+          <div class="glass-card settlement-card">
+            <div class="settlement-header">
+              <div class="settlement-icon-wrap emerald">🏦</div>
+              <div>
+                <h3 class="card-title">1. Remboursement par le Compte Travaux (50 000 €)</h3>
+                <p class="card-subtitle">Option standard : remboursement des avances via déblocage du prêt travaux</p>
+              </div>
+            </div>
+
+            <div class="settlement-body mt-4">
+              <p class="settlement-explainer">
+                Comme ces factures ont été payées avec vos cartes personnelles, le compte travaux dédié (50 000,00 €) doit reverser à chacun le montant exact avancé :
+              </p>
+
+              <div class="settlement-pills-row">
+                <div class="settlement-pill pill-axel">
+                  <span class="pill-title">À rembourser à Axel :</span>
+                  <strong class="pill-amount text-cyan font-mono" id="trv-reimburse-axel">5 302,00 €</strong>
+                  <span class="pill-subtext" id="trv-reimburse-axel-status">Statut : Non remboursé</span>
+                </div>
+                <div class="settlement-pill pill-ariane">
+                  <span class="pill-title">À rembourser à Ariane :</span>
+                  <strong class="pill-amount text-violet font-mono" id="trv-reimburse-ariane">7 812,85 €</strong>
+                  <span class="pill-subtext" id="trv-reimburse-ariane-status">Statut : Non remboursé</span>
+                </div>
+              </div>
+
+              <div class="settlement-summary-box mt-3">
+                <div class="summary-line">
+                  <span>Total à débloquer / virer aux conjoints :</span>
+                  <strong class="text-amber font-mono" id="trv-reimburse-total">13 114,85 €</strong>
+                </div>
+                <div class="summary-line">
+                  <span>Solde net du compte travaux après remboursement :</span>
+                  <strong class="text-emerald font-mono" id="trv-reimburse-after-rem">36 885,15 €</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Direct Partner-to-Partner Settlement (if not drawing from 50k yet) -->
+          <div class="glass-card settlement-card">
+            <div class="settlement-header">
+              <div class="settlement-icon-wrap violet">⚖️</div>
+              <div>
+                <h3 class="card-title">2. Rééquilibrage Direct Entre Axel & Ariane</h3>
+                <p class="card-subtitle">Alternative : si les dépenses restent à votre charge personnelle (50/50)</p>
+              </div>
+            </div>
+
+            <div class="settlement-body mt-4">
+              <p class="settlement-explainer">
+                Si vous ne passez pas par le compte travaux et souhaitez équilibrer vos comptes personnels à égalité stricte (50/50) :
+              </p>
+
+              <div class="settlement-equalizer-box">
+                <div class="eq-row">
+                  <span>Part théorique de chacun (50% de 13 114,85 €) :</span>
+                  <strong class="font-mono" id="trv-eq-target-50">6 557,43 €</strong>
+                </div>
+                <div class="eq-row">
+                  <span>Axel a avancé :</span>
+                  <span class="font-mono text-cyan" id="trv-eq-paid-axel">5 302,00 € <small class="text-rose">(-1 255,43 €)</small></span>
+                </div>
+                <div class="eq-row">
+                  <span>Ariane a avancé :</span>
+                  <span class="font-mono text-violet" id="trv-eq-paid-ariane">7 812,85 € <small class="text-emerald">(+1 255,42 €)</small></span>
+                </div>
+                <div class="eq-verdict-box">
+                  <div class="eq-verdict-icon">👉</div>
+                  <div class="eq-verdict-text" id="trv-eq-verdict-text">
+                    <strong>Axel doit virer 1 255,43 € à Ariane</strong> pour atteindre une égalité parfaite (6 557,43 € chacun).
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- The Spreadsheet / Detailed Table -->
+        <div class="glass-card mt-6">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Détail des Dépenses & Avances Travaux</h2>
+              <p class="card-subtitle">Tableau de suivi des postes de rénovation, saisies manuelles et statuts de remboursement</p>
+            </div>
+            <div class="table-actions-strip">
+              <div class="table-search-wrap">
+                <input type="text" id="travaux-search-input" class="table-search-input" placeholder="🔍 Rechercher (Toiture, VMC...)">
+              </div>
+              <div class="status-filter-pills" role="radiogroup">
+                <button type="button" class="filter-pill active" data-filter="all" id="filter-trv-all">Tous (<span id="count-trv-all">4</span>)</button>
+                <button type="button" class="filter-pill" data-filter="unreimbursed" id="filter-trv-unreimbursed">Non remboursés (<span id="count-trv-unreimbursed">4</span>)</button>
+                <button type="button" class="filter-pill" data-filter="reimbursed" id="filter-trv-reimbursed">Remboursés (<span id="count-trv-reimbursed">0</span>)</button>
+              </div>
+              <button class="btn btn-primary btn-sm" id="btn-add-travaux-row">
+                + Ajouter une ligne
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive mt-3">
+            <table class="custom-table travaux-table" id="travaux-detail-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Raison / Poste de Dépense</th>
+                  <th class="text-right">Dépense Axel</th>
+                  <th class="text-right">Dépense Ariane</th>
+                  <th class="text-right">Total Dépense</th>
+                  <th class="text-center">Remboursé ?</th>
+                  <th class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="travaux-tbody">
+                <!-- Dynamically rendered via JS -->
+              </tbody>
+              <tfoot id="travaux-tfoot" class="travaux-tfoot">
+                <tr class="tfoot-total-row">
+                  <td colspan="2">
+                    <strong>Total Dépensé (Consommé)</strong>
+                  </td>
+                  <td class="text-right font-mono text-cyan" id="tfoot-axel-total">5 302,00 €</td>
+                  <td class="text-right font-mono text-violet" id="tfoot-ariane-total">7 812,85 €</td>
+                  <td class="text-right font-mono text-amber" id="tfoot-consumed-total">13 114,85 €</td>
+                  <td colspan="2" class="text-center">
+                    <span class="badge-subtle" id="tfoot-status-summary">4 non remboursés</span>
+                  </td>
+                </tr>
+                <tr class="tfoot-solde-row">
+                  <td colspan="4">
+                    <span class="text-dim">Solde Commun Travaux Initial : <strong id="tfoot-initial-display">50 000,00 €</strong> &nbsp;|&nbsp; Consommé : <strong id="tfoot-consumed-display">13 114,85 €</strong></span>
+                  </td>
+                  <td colspan="3" class="text-right">
+                    <span class="reste-label">Reste Disponible sur l'enveloppe :</span>
+                    <strong class="reste-amount text-emerald font-mono" id="tfoot-remaining-total">36 885,15 €</strong>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- ================= TAB 5: PROFILES & REPARTITION (GENERIC) ================= -->
       <section class="tab-pane" id="pane-profiles">
         <div class="grid-2-col">
@@ -1061,6 +1381,90 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-ghost" id="btn-cancel-lcl-modal">Annuler</button>
             <button type="submit" class="btn btn-primary" id="btn-save-lcl-item">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: ADD / EDIT TRAVAUX EXPENSE -->
+    <div class="modal-backdrop" id="travaux-modal" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 class="modal-title" id="travaux-modal-title">Ajouter une dépense travaux</h3>
+          <button class="modal-close-btn" id="btn-close-travaux-modal">&times;</button>
+        </div>
+        <form id="travaux-form">
+          <input type="hidden" id="modal-trv-id">
+
+          <div class="form-field">
+            <label for="modal-trv-reason">Raison / Intitulé du poste de travaux</label>
+            <input type="text" id="modal-trv-reason" class="custom-input" placeholder="ex: Toiture Roman Avance, acompte vmc..." required>
+          </div>
+
+          <div class="form-group-row">
+            <div class="form-field">
+              <label for="modal-trv-date">Date de l'opération</label>
+              <input type="date" id="modal-trv-date" class="custom-input" required>
+            </div>
+            <div class="form-field">
+              <label for="modal-trv-reimbursed">Statut remboursement</label>
+              <select id="modal-trv-reimbursed" class="custom-select">
+                <option value="false">Non remboursé (En attente)</option>
+                <option value="true">Remboursé par le compte travaux</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group-row">
+            <div class="form-field">
+              <label for="modal-trv-axel" id="modal-trv-axel-label">Avance Axel (€)</label>
+              <input type="number" step="0.01" id="modal-trv-axel" class="custom-input" placeholder="0.00" value="0.00">
+            </div>
+            <div class="form-field">
+              <label for="modal-trv-ariane" id="modal-trv-ariane-label">Avance Ariane (€)</label>
+              <input type="number" step="0.01" id="modal-trv-ariane" class="custom-input" placeholder="0.00" value="0.00">
+            </div>
+          </div>
+
+          <!-- Quick split helpers -->
+          <div class="quick-split-bar mb-3">
+            <span class="quick-split-label">Répartition rapide :</span>
+            <div class="quick-split-btns">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-split-50-trv" title="Diviser le montant total en parts égales 50/50">⚖️ 50 / 50</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-split-100-axel" title="100% payé par Axel">100% Axel</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-split-100-ariane" title="100% payé par Ariane">100% Ariane</button>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="modal-trv-notes">Notes / Détails devis (optionnel)</label>
+            <input type="text" id="modal-trv-notes" class="custom-input" placeholder="ex: Devis signé Roman Toiture, virement Bourso...">
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" id="btn-cancel-travaux-modal">Annuler</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-travaux-item">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: EDIT TRAVAUX ENVELOPE BUDGET -->
+    <div class="modal-backdrop" id="travaux-budget-modal" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 class="modal-title">Ajuster l'Enveloppe Globale Travaux</h3>
+          <button class="modal-close-btn" id="btn-close-budget-modal">&times;</button>
+        </div>
+        <form id="travaux-budget-form">
+          <div class="form-field">
+            <label for="modal-budget-val">Budget Total Financement Travaux (€)</label>
+            <input type="number" step="100" id="modal-budget-val" class="custom-input font-mono" style="font-size:1.15rem; font-weight:700;" value="50000" required>
+            <small style="color:var(--text-dim); margin-top:4px;">Par défaut : 50 000,00 € (montant du fonds prêt ou épargne dédiée travaux maison).</small>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" id="btn-cancel-budget-modal">Annuler</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-budget-val">Valider le budget</button>
           </div>
         </form>
       </div>
