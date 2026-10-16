@@ -44,11 +44,70 @@ const DEFAULT_STATE = {
   },
   travauxFund: {
     initialBudget: 50000.00,
+    lots: [
+      {
+        id: 'lot-1',
+        name: 'Toiture & Couverture (Chantier Roman)',
+        allocatedBudget: 15000.00,
+        icon: '🏠',
+        status: 'ongoing',
+        notes: 'Rénovation toiture et étanchéité'
+      },
+      {
+        id: 'lot-2',
+        name: 'Logistique, Repas & Frais Chantier',
+        allocatedBudget: 2000.00,
+        icon: '🥪',
+        status: 'completed',
+        notes: 'Frais de bouche et intendance ouvriers'
+      },
+      {
+        id: 'lot-3',
+        name: 'Ventilation & Qualité de l\'air (VMC)',
+        allocatedBudget: 1500.00,
+        icon: '🌀',
+        status: 'ongoing',
+        notes: 'Installation VMC hygroréglable'
+      },
+      {
+        id: 'lot-4',
+        name: 'Menuiseries, Fenêtres & Isolation',
+        allocatedBudget: 12500.00,
+        icon: '🪟',
+        status: 'future',
+        notes: 'Changement vitrages et isolation combles'
+      },
+      {
+        id: 'lot-5',
+        name: 'Électricité, Réseau & Domotique',
+        allocatedBudget: 7500.00,
+        icon: '⚡',
+        status: 'future',
+        notes: 'Remise aux normes et tableau'
+      },
+      {
+        id: 'lot-6',
+        name: 'Plomberie & Sanitaires (SdB)',
+        allocatedBudget: 6500.00,
+        icon: '🚿',
+        status: 'future',
+        notes: 'Réseaux d\'eau et salle de bain'
+      },
+      {
+        id: 'lot-7',
+        name: 'Réserve Imprévus & Contingence',
+        allocatedBudget: 5000.00,
+        icon: '🛡️',
+        status: 'reserve',
+        notes: 'Marge de sécurité imprévus chantier'
+      }
+    ],
     items: [
       {
         id: 'trv-1',
         date: '2026-10-10',
         reason: 'Toiture Roman Avance',
+        lotId: 'lot-1',
         amountAxel: 4302.00,
         amountAriane: 4302.00,
         reimbursed: false,
@@ -58,6 +117,7 @@ const DEFAULT_STATE = {
         id: 'trv-2',
         date: '2026-10-11',
         reason: 'Toiture Roman Avance (Frais de bouche)',
+        lotId: 'lot-2',
         amountAxel: 1000.00,
         amountAriane: 1000.00,
         reimbursed: false,
@@ -67,6 +127,7 @@ const DEFAULT_STATE = {
         id: 'trv-3',
         date: '2026-10-14',
         reason: 'Toiture Roman',
+        lotId: 'lot-1',
         amountAxel: 0.00,
         amountAriane: 1874.85,
         reimbursed: false,
@@ -76,6 +137,7 @@ const DEFAULT_STATE = {
         id: 'trv-4',
         date: '2026-10-15',
         reason: 'acompte vmc',
+        lotId: 'lot-3',
         amountAxel: 0.00,
         amountAriane: 636.00,
         reimbursed: false,
@@ -247,6 +309,8 @@ function loadState() {
         const merged = { ...DEFAULT_STATE, ...parsed };
         if (!merged.travauxFund || !merged.travauxFund.items || merged.travauxFund.items.length === 0) {
           merged.travauxFund = JSON.parse(JSON.stringify(DEFAULT_STATE.travauxFund));
+        } else if (!merged.travauxFund.lots || merged.travauxFund.lots.length === 0) {
+          merged.travauxFund.lots = JSON.parse(JSON.stringify(DEFAULT_STATE.travauxFund.lots));
         }
         return merged;
       }
@@ -490,6 +554,7 @@ function calculateBudgets() {
 function calculateTravauxMetrics() {
   const fund = appState.travauxFund || DEFAULT_STATE.travauxFund;
   const initialBudget = Number(fund.initialBudget) || 50000.00;
+  const rawLots = fund.lots || DEFAULT_STATE.travauxFund.lots || [];
   const items = fund.items || [];
 
   let totalAxel = 0;
@@ -499,9 +564,23 @@ function calculateTravauxMetrics() {
   let unreimbursedAxel = 0;
   let unreimbursedAriane = 0;
 
+  // Initialize lot buckets
+  const lotStats = rawLots.map(lot => ({
+    ...lot,
+    allocatedBudget: Number(lot.allocatedBudget) || 0,
+    totalSpent: 0,
+    spentAxel: 0,
+    spentAriane: 0,
+    remaining: 0,
+    percentConsumed: 0,
+    isOverBudget: false,
+    itemsCount: 0
+  }));
+
   items.forEach(item => {
     const ax = Number(item.amountAxel) || 0;
     const ar = Number(item.amountAriane) || 0;
+    const itemTotal = ax + ar;
     totalAxel += ax;
     totalAriane += ar;
 
@@ -512,6 +591,40 @@ function calculateTravauxMetrics() {
       unreimbursedAxel += ax;
       unreimbursedAriane += ar;
     }
+
+    // Match to lot
+    let targetLot = null;
+    if (item.lotId) {
+      targetLot = lotStats.find(l => l.id === item.lotId);
+    }
+    if (!targetLot) {
+      const r = (item.reason || '').toLowerCase();
+      if (r.includes('bouche') || r.includes('repas') || r.includes('logistique')) {
+        targetLot = lotStats.find(l => l.id === 'lot-2');
+      } else if (r.includes('toiture')) {
+        targetLot = lotStats.find(l => l.id === 'lot-1');
+      } else if (r.includes('vmc') || r.includes('ventilation')) {
+        targetLot = lotStats.find(l => l.id === 'lot-3');
+      } else {
+        targetLot = lotStats[0];
+      }
+    }
+
+    if (targetLot) {
+      targetLot.totalSpent += itemTotal;
+      targetLot.spentAxel += ax;
+      targetLot.spentAriane += ar;
+      targetLot.itemsCount += 1;
+    }
+  });
+
+  // Finalize lots
+  let totalAllocatedLots = 0;
+  lotStats.forEach(lot => {
+    totalAllocatedLots += lot.allocatedBudget;
+    lot.remaining = lot.allocatedBudget - lot.totalSpent;
+    lot.percentConsumed = lot.allocatedBudget > 0 ? (lot.totalSpent / lot.allocatedBudget) * 100 : 0;
+    lot.isOverBudget = lot.totalSpent > lot.allocatedBudget;
   });
 
   const totalConsumed = totalAxel + totalAriane;
@@ -544,7 +657,9 @@ function calculateTravauxMetrics() {
 
   return {
     initialBudget,
+    lots: lotStats,
     items,
+    totalAllocatedLots,
     totalAxel,
     totalAriane,
     totalConsumed,
@@ -1412,7 +1527,206 @@ function renderTravauxTab(m) {
       `<strong>Parité parfaite !</strong> Axel et Ariane ont chacun avancé exactement la même somme (${formatCurrency(m.target50Share)}).`;
   }
 
+  renderTravauxLotsTable(m);
   renderTravauxTable(m);
+}
+
+function renderTravauxLotsTable(m) {
+  const tbody = document.getElementById('travaux-lots-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  // KPI strip
+  const elBudget = document.getElementById('lots-kpi-total-budget');
+  const elSpent = document.getElementById('lots-kpi-total-spent');
+  const elSpentPct = document.getElementById('lots-kpi-total-spent-pct');
+  const elRemaining = document.getElementById('lots-kpi-total-remaining');
+  const elRemPct = document.getElementById('lots-kpi-total-rem-pct');
+  const elAxel = document.getElementById('lots-kpi-axel');
+  const elAriane = document.getElementById('lots-kpi-ariane');
+
+  if (elBudget) elBudget.textContent = formatCurrency(m.initialBudget);
+  if (elSpent) elSpent.textContent = formatCurrency(m.totalConsumed);
+  if (elSpentPct) elSpentPct.textContent = `(${m.percentageConsumed.toFixed(1)}%)`;
+  if (elRemaining) elRemaining.textContent = formatCurrency(m.remainingBudget);
+  if (elRemPct) elRemPct.textContent = `(${m.percentageRemaining.toFixed(1)}%)`;
+  if (elAxel) elAxel.textContent = formatCurrency(m.totalAxel);
+  if (elAriane) elAriane.textContent = formatCurrency(m.totalAriane);
+
+  // Render rows
+  m.lots.forEach(lot => {
+    const tr = document.createElement('tr');
+    tr.className = 'lot-row';
+
+    // Status pill
+    let statusClass = 'status-future';
+    let statusLabel = 'À venir';
+    if (lot.status === 'ongoing') {
+      statusClass = 'status-ongoing';
+      statusLabel = 'En cours';
+    } else if (lot.status === 'completed') {
+      statusClass = 'status-completed';
+      statusLabel = 'Clôturé';
+    } else if (lot.status === 'reserve') {
+      statusClass = 'status-reserve';
+      statusLabel = 'Réserve';
+    }
+
+    // Variance badge
+    let remainingHtml = '';
+    if (lot.remaining < 0) {
+      remainingHtml = `<span class="font-mono text-rose" style="font-weight:700;">-${formatCurrency(Math.abs(lot.remaining))}</span>`;
+    } else if (lot.remaining === 0 && lot.allocatedBudget > 0) {
+      remainingHtml = `<span class="font-mono text-dim">0,00 € (100%)</span>`;
+    } else {
+      remainingHtml = `<span class="font-mono text-emerald" style="font-weight:700;">+${formatCurrency(lot.remaining)}</span>`;
+    }
+
+    // Progress bar color
+    let barColor = '#10b981'; // emerald
+    if (lot.isOverBudget) {
+      barColor = '#f43f5e'; // rose
+    } else if (lot.percentConsumed >= 80) {
+      barColor = '#f59e0b'; // amber
+    }
+
+    const pctClamped = Math.min(100, lot.percentConsumed);
+
+    tr.innerHTML = `
+      <td>
+        <div class="lot-cell">
+          <div class="lot-icon-wrap">${lot.icon || '🔨'}</div>
+          <div>
+            <div class="lot-name">${lot.name}</div>
+            <div class="lot-meta">${lot.notes || (lot.itemsCount > 0 ? `${lot.itemsCount} dépense${lot.itemsCount > 1 ? 's' : ''} notée${lot.itemsCount > 1 ? 's' : ''}` : 'Aucune dépense notée')}</div>
+          </div>
+        </div>
+      </td>
+      <td class="text-center">
+        <span class="lot-status-pill ${statusClass}">${statusLabel}</span>
+      </td>
+      <td class="text-right font-mono" style="font-weight: 700;">${formatCurrency(lot.allocatedBudget)}</td>
+      <td class="text-right font-mono ${lot.totalSpent > 0 ? 'text-amber' : 'text-dim'}" style="font-weight: 700;">
+        ${lot.totalSpent > 0 ? formatCurrency(lot.totalSpent) : '—'}
+      </td>
+      <td class="text-right font-mono text-cyan" style="font-weight: 600;">
+        ${lot.spentAxel > 0 ? formatCurrency(lot.spentAxel) : '—'}
+      </td>
+      <td class="text-right font-mono text-violet" style="font-weight: 600;">
+        ${lot.spentAriane > 0 ? formatCurrency(lot.spentAriane) : '—'}
+      </td>
+      <td class="text-right">${remainingHtml}</td>
+      <td>
+        <div class="lot-progress-cell">
+          <div class="lot-progress-bar">
+            <div class="lot-progress-fill" style="width: ${pctClamped.toFixed(1)}%; background-color: ${barColor};"></div>
+          </div>
+          <span class="lot-progress-label ${lot.isOverBudget ? 'text-rose' : ''}">
+            ${lot.percentConsumed.toFixed(1)}%
+          </span>
+        </div>
+      </td>
+      <td class="text-center">
+        <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+          <button type="button" class="lcl-actions-btn btn-edit-lot" data-id="${lot.id}" title="Modifier ce lot">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+          <button type="button" class="delete-btn btn-delete-lot" data-id="${lot.id}" title="Supprimer ce lot">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Footer totals
+  const footBudget = document.getElementById('tfoot-lots-budget');
+  const footSpent = document.getElementById('tfoot-lots-spent');
+  const footAxel = document.getElementById('tfoot-lots-axel');
+  const footAriane = document.getElementById('tfoot-lots-ariane');
+  const footRem = document.getElementById('tfoot-lots-remaining');
+  const footFill = document.getElementById('tfoot-lots-progress-fill');
+  const footPct = document.getElementById('tfoot-lots-progress-pct');
+
+  if (footBudget) footBudget.textContent = formatCurrency(m.initialBudget);
+  if (footSpent) footSpent.textContent = formatCurrency(m.totalConsumed);
+  if (footAxel) footAxel.textContent = formatCurrency(m.totalAxel);
+  if (footAriane) footAriane.textContent = formatCurrency(m.totalAriane);
+  if (footRem) {
+    if (m.remainingBudget < 0) {
+      footRem.textContent = `-${formatCurrency(Math.abs(m.remainingBudget))}`;
+      footRem.className = 'text-right font-mono text-rose';
+    } else {
+      footRem.textContent = `+${formatCurrency(m.remainingBudget)}`;
+      footRem.className = 'text-right font-mono text-emerald';
+    }
+  }
+  if (footFill) footFill.style.width = `${Math.min(100, m.percentageConsumed).toFixed(2)}%`;
+  if (footPct) footPct.textContent = `${m.percentageConsumed.toFixed(1)}%`;
+}
+
+function exportTravauxCsv() {
+  const m = calculateTravauxMetrics();
+  let csv = '\uFEFF'; // UTF-8 BOM for Excel
+  
+  csv += 'DUO BUDGET - SUIVI FINANCIER DES TRAVAUX DE RENOVATION\n';
+  csv += `Date d'export : ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR')}\n`;
+  csv += `Budget global initial alloué : ${m.initialBudget.toFixed(2).replace('.', ',')} €\n`;
+  csv += `Total des dépenses notées : ${m.totalConsumed.toFixed(2).replace('.', ',')} €\n`;
+  csv += `Solde restant disponible : ${m.remainingBudget.toFixed(2).replace('.', ',')} €\n\n`;
+
+  // Section 1: Lots Tracking
+  csv += 'TABLEAU DE SUIVI BUDGETAIRE : BUDGET DE BASE VS DEPENSES REELLES PAR LOT\n';
+  csv += 'Lot / Chantier;Statut;Budget de base (€);Dépensé réel (€);Avance Axel (€);Avance Ariane (€);Écart / Reste (€);Taux consommé (%)\n';
+
+  m.lots.forEach(lot => {
+    const statusMap = { ongoing: 'En cours', completed: 'Clôturé', future: 'À venir', reserve: 'Réserve' };
+    const st = statusMap[lot.status] || lot.status;
+    const nameClean = (lot.name || '').replace(/;/g, ',');
+    const b = lot.allocatedBudget.toFixed(2).replace('.', ',');
+    const s = lot.totalSpent.toFixed(2).replace('.', ',');
+    const ax = lot.spentAxel.toFixed(2).replace('.', ',');
+    const ar = lot.spentAriane.toFixed(2).replace('.', ',');
+    const rem = lot.remaining.toFixed(2).replace('.', ',');
+    const pct = lot.percentConsumed.toFixed(1).replace('.', ',');
+    csv += `"${nameClean}";"${st}";${b};${s};${ax};${ar};${rem};${pct}%\n`;
+  });
+
+  csv += `"TOTAL DU BUDGET TRAVAUX";"Global";${m.initialBudget.toFixed(2).replace('.', ',')};${m.totalConsumed.toFixed(2).replace('.', ',')};${m.totalAxel.toFixed(2).replace('.', ',')};${m.totalAriane.toFixed(2).replace('.', ',')};${m.remainingBudget.toFixed(2).replace('.', ',')};${m.percentageConsumed.toFixed(1).replace('.', ',')}%\n\n`;
+
+  // Section 2: Detailed items
+  csv += 'DETAIL DES FACTURES ET ACOMPTES TRAVAUX NOTES\n';
+  csv += 'Date;Raison / Intitulé;Lot rattaché;Avance Axel (€);Avance Ariane (€);Total (€);Statut Remboursement;Notes\n';
+
+  m.items.forEach(item => {
+    const d = item.date || '';
+    const r = (item.reason || '').replace(/;/g, ',');
+    let lot = m.lots.find(l => l.id === item.lotId);
+    if (!lot) {
+      const lower = r.toLowerCase();
+      if (lower.includes('bouche') || lower.includes('repas')) lot = m.lots.find(l => l.id === 'lot-2');
+      else if (lower.includes('toiture')) lot = m.lots.find(l => l.id === 'lot-1');
+      else if (lower.includes('vmc')) lot = m.lots.find(l => l.id === 'lot-3');
+    }
+    const lotName = lot ? lot.name.replace(/;/g, ',') : 'Non assigné';
+    const ax = (Number(item.amountAxel) || 0).toFixed(2).replace('.', ',');
+    const ar = (Number(item.amountAriane) || 0).toFixed(2).replace('.', ',');
+    const tot = ((Number(item.amountAxel) || 0) + (Number(item.amountAriane) || 0)).toFixed(2).replace('.', ',');
+    const st = item.reimbursed ? 'Remboursé' : 'Non remboursé';
+    const n = (item.notes || '').replace(/;/g, ',');
+    csv += `"${d}";"${r}";"${lotName}";${ax};${ar};${tot};"${st}";"${n}"\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const dlAnchor = document.createElement('a');
+  dlAnchor.setAttribute('href', url);
+  dlAnchor.setAttribute('download', `Suivi_Travaux_Renovation_50k_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(dlAnchor);
+  dlAnchor.click();
+  dlAnchor.remove();
+  URL.revokeObjectURL(url);
 }
 
 function renderTravauxTable(m) {
@@ -1454,12 +1768,25 @@ function renderTravauxTable(m) {
   } else {
     filtered.forEach(item => {
       const totalItem = (Number(item.amountAxel) || 0) + (Number(item.amountAriane) || 0);
+
+      let targetLot = m.lots.find(l => l.id === item.lotId);
+      if (!targetLot) {
+        const r = (item.reason || '').toLowerCase();
+        if (r.includes('bouche') || r.includes('repas') || r.includes('logistique')) targetLot = m.lots.find(l => l.id === 'lot-2');
+        else if (r.includes('toiture')) targetLot = m.lots.find(l => l.id === 'lot-1');
+        else if (r.includes('vmc')) targetLot = m.lots.find(l => l.id === 'lot-3');
+      }
+      const lotTagHtml = targetLot ? `<span class="badge-tag" style="background: rgba(14, 165, 233, 0.12); color: #38bdf8; font-size: 0.72rem; margin-left: 6px; padding: 2px 7px; border-radius: 6px;">${targetLot.icon || '🔨'} ${targetLot.name.split('(')[0].trim()}</span>` : '';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="white-space: nowrap; font-size:0.85rem;">${formatDateFR(item.date)}</td>
         <td>
-          <div style="font-weight: 700; color: #ffffff;">${item.reason}</div>
-          ${item.notes ? `<div style="font-size:0.75rem; color:var(--text-dim);">${item.notes}</div>` : ''}
+          <div style="font-weight: 700; color: #ffffff; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+            <span>${item.reason}</span>
+            ${lotTagHtml}
+          </div>
+          ${item.notes ? `<div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">${item.notes}</div>` : ''}
         </td>
         <td class="text-right font-mono" style="font-weight: 700; color: ${item.amountAxel > 0 ? '#38bdf8' : 'var(--text-dim)'};">
           ${item.amountAxel > 0 ? formatCurrency(item.amountAxel) : '—'}
@@ -2006,10 +2333,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-split-100-axel').textContent = `100% ${p1.name}`;
     document.getElementById('btn-split-100-ariane').textContent = `100% ${p2.name}`;
 
+    // Populate Lot select
+    const lotSelect = document.getElementById('modal-trv-lot');
+    if (lotSelect) {
+      const lots = appState.travauxFund?.lots || DEFAULT_STATE.travauxFund.lots;
+      lotSelect.innerHTML = lots.map(l => 
+        `<option value="${l.id}">${l.icon || '🔨'} ${l.name} (${formatCurrency(l.allocatedBudget)})</option>`
+      ).join('');
+    }
+
     if (item) {
       modalTitle.textContent = 'Modifier la dépense travaux';
       document.getElementById('modal-trv-id').value = item.id;
       document.getElementById('modal-trv-reason').value = item.reason || '';
+      if (lotSelect && item.lotId) lotSelect.value = item.lotId;
       document.getElementById('modal-trv-date').value = item.date || new Date().toISOString().slice(0, 10);
       document.getElementById('modal-trv-reimbursed').value = item.reimbursed ? 'true' : 'false';
       document.getElementById('modal-trv-axel').value = (Number(item.amountAxel) || 0).toFixed(2);
@@ -2072,6 +2409,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const trvId = document.getElementById('modal-trv-id').value;
     const reasonVal = document.getElementById('modal-trv-reason').value.trim();
+    const lotIdVal = document.getElementById('modal-trv-lot') ? document.getElementById('modal-trv-lot').value : '';
     const dateVal = document.getElementById('modal-trv-date').value;
     const reimbursedVal = (document.getElementById('modal-trv-reimbursed').value === 'true');
     const axelVal = parseFloat(document.getElementById('modal-trv-axel').value) || 0;
@@ -2087,6 +2425,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const target = appState.travauxFund.items.find(x => x.id === trvId);
       if (target) {
         target.reason = reasonVal;
+        target.lotId = lotIdVal;
         target.date = dateVal;
         target.reimbursed = reimbursedVal;
         target.amountAxel = axelVal;
@@ -2098,6 +2437,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const newItem = {
         id: 'trv-' + Date.now(),
         reason: reasonVal,
+        lotId: lotIdVal,
         date: dateVal,
         reimbursed: reimbursedVal,
         amountAxel: axelVal,
@@ -2112,7 +2452,99 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
   });
 
-  // Travaux actions: toggle reimbursed, edit, delete
+  // ==========================================================
+  // TRAVAUX LOTS (ADD / EDIT / DELETE)
+  // ==========================================================
+  const lotModal = document.getElementById('travaux-lot-modal');
+  const btnAddTravauxLot = document.getElementById('btn-add-travaux-lot');
+  const btnCloseLotModal = document.getElementById('btn-close-lot-modal');
+  const btnCancelLotModal = document.getElementById('btn-cancel-lot-modal');
+  const lotForm = document.getElementById('travaux-lot-form');
+
+  function openLotModal(lot = null) {
+    if (!lotModal) return;
+    lotForm.reset();
+    const modalTitle = document.getElementById('travaux-lot-modal-title');
+    if (lot) {
+      modalTitle.textContent = 'Modifier le lot de travaux';
+      document.getElementById('modal-lot-id').value = lot.id;
+      document.getElementById('modal-lot-name').value = lot.name || '';
+      document.getElementById('modal-lot-budget').value = lot.allocatedBudget || 0;
+      document.getElementById('modal-lot-status').value = lot.status || 'ongoing';
+      document.getElementById('modal-lot-icon').value = lot.icon || '🔨';
+      document.getElementById('modal-lot-notes').value = lot.notes || '';
+    } else {
+      modalTitle.textContent = 'Nouveau lot de travaux';
+      document.getElementById('modal-lot-id').value = '';
+      document.getElementById('modal-lot-name').value = '';
+      document.getElementById('modal-lot-budget').value = '2000';
+      document.getElementById('modal-lot-status').value = 'ongoing';
+      document.getElementById('modal-lot-icon').value = '🔨';
+      document.getElementById('modal-lot-notes').value = '';
+    }
+    lotModal.style.display = 'flex';
+  }
+
+  function closeLotModal() {
+    if (lotModal) lotModal.style.display = 'none';
+  }
+
+  if (btnAddTravauxLot) btnAddTravauxLot.addEventListener('click', () => openLotModal());
+  if (btnCloseLotModal) btnCloseLotModal.addEventListener('click', closeLotModal);
+  if (btnCancelLotModal) btnCancelLotModal.addEventListener('click', closeLotModal);
+
+  if (lotForm) {
+    lotForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const lotId = document.getElementById('modal-lot-id').value;
+      const nameVal = document.getElementById('modal-lot-name').value.trim();
+      const budgetVal = parseFloat(document.getElementById('modal-lot-budget').value) || 0;
+      const statusVal = document.getElementById('modal-lot-status').value;
+      const iconVal = document.getElementById('modal-lot-icon').value.trim() || '🔨';
+      const notesVal = document.getElementById('modal-lot-notes').value.trim();
+
+      if (!appState.travauxFund.lots) {
+        appState.travauxFund.lots = JSON.parse(JSON.stringify(DEFAULT_STATE.travauxFund.lots));
+      }
+
+      if (lotId) {
+        const target = appState.travauxFund.lots.find(l => l.id === lotId);
+        if (target) {
+          target.name = nameVal;
+          target.allocatedBudget = budgetVal;
+          target.status = statusVal;
+          target.icon = iconVal;
+          target.notes = notesVal;
+        }
+      } else {
+        const newLot = {
+          id: 'lot-' + Date.now(),
+          name: nameVal,
+          allocatedBudget: budgetVal,
+          status: statusVal,
+          icon: iconVal,
+          notes: notesVal
+        };
+        appState.travauxFund.lots.push(newLot);
+      }
+
+      saveStateImmediate();
+      closeLotModal();
+      renderAll();
+    });
+  }
+
+  // Export CSV & Print buttons
+  const btnExportCsv = document.getElementById('btn-export-travaux-csv');
+  if (btnExportCsv) {
+    btnExportCsv.addEventListener('click', exportTravauxCsv);
+  }
+  const btnPrint = document.getElementById('btn-print-travaux');
+  if (btnPrint) {
+    btnPrint.addEventListener('click', () => window.print());
+  }
+
+  // Travaux actions: toggle reimbursed, edit/delete expense, edit/delete lot
   document.addEventListener('click', (e) => {
     // Toggle reimbursed button
     const toggleBtn = e.target.closest('.btn-toggle-reimbursed');
@@ -2144,6 +2576,29 @@ document.addEventListener('DOMContentLoaded', () => {
       const trvId = delBtn.dataset.id;
       if (confirm('Voulez-vous supprimer cette ligne de travaux ?')) {
         appState.travauxFund.items = appState.travauxFund.items.filter(x => x.id !== trvId);
+        saveStateImmediate();
+        renderAll();
+      }
+      return;
+    }
+
+    // Edit Travaux lot
+    const editLotBtn = e.target.closest('.btn-edit-lot');
+    if (editLotBtn) {
+      const lotId = editLotBtn.dataset.id;
+      const target = (appState.travauxFund?.lots || []).find(l => l.id === lotId);
+      if (target) {
+        openLotModal(target);
+      }
+      return;
+    }
+
+    // Delete Travaux lot
+    const delLotBtn = e.target.closest('.btn-delete-lot');
+    if (delLotBtn) {
+      const lotId = delLotBtn.dataset.id;
+      if (confirm('Voulez-vous supprimer ce lot de travaux ?')) {
+        appState.travauxFund.lots = (appState.travauxFund?.lots || []).filter(l => l.id !== lotId);
         saveStateImmediate();
         renderAll();
       }
