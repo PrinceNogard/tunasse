@@ -610,6 +610,13 @@ function renderTravauxDashboardWidget(m) {
   document.getElementById('dash-trv-legend-axel').textContent = formatCurrency(m.totalAxel);
   document.getElementById('dash-trv-legend-ariane').textContent = formatCurrency(m.totalAriane);
   document.getElementById('dash-trv-legend-rem').textContent = formatCurrency(m.remainingBudget);
+
+  const topTrvTag = document.getElementById('top-travaux-tag');
+  if (topTrvTag) topTrvTag.textContent = `Reste ${formatCurrency(m.remainingBudget)}`;
+  const topTrvCons = document.getElementById('top-travaux-consumed');
+  if (topTrvCons) topTrvCons.textContent = formatCurrency(m.totalConsumed);
+  const topTrvSub = document.getElementById('top-travaux-subtext');
+  if (topTrvSub) topTrvSub.textContent = `consommé sur ${formatCurrency(m.initialBudget)}`;
 }
 
 function renderTravauxKpiAndBars(m) {
@@ -996,25 +1003,22 @@ function renderProfilesTab() {
 }
 
 function renderSummaryStrip(data) {
-  const { globalMonthlyBudget, globalAnnualBudget, lclTotal, revolutBudgetTotal, loan } = data;
+  const { globalMonthlyBudget, globalAnnualBudget, lclTotal, revolutBudgetTotal, revolutSpentThisMonth } = data;
   const setEl = (id, val) => {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
   };
 
-  setEl('top-global-monthly', formatCurrency(globalMonthlyBudget));
-  setEl('top-global-annual', `${formatCurrency(globalAnnualAnnual(globalAnnualBudget))} / an`);
-  setEl('top-lcl-monthly', formatCurrency(lclTotal));
-  setEl('top-revolut-monthly', formatCurrency(revolutBudgetTotal));
-
-  function globalAnnualAnnual(val) {
-    return val;
-  }
+  setEl('top-total-budget', formatCurrency(globalMonthlyBudget));
+  setEl('top-total-annual', `${formatCurrency(globalAnnualBudget)} / an`);
+  setEl('top-lcl-budget', formatCurrency(lclTotal));
+  setEl('top-revolut-budget', formatCurrency(revolutBudgetTotal));
+  setEl('top-revolut-spent', `${formatCurrency(revolutSpentThisMonth || 0)} dépensés ce mois`);
 
   const p1 = appState.profiles[0];
   const p2 = appState.profiles[1];
   const strip = document.getElementById('header-profiles-display');
-  if (strip) {
+  if (strip && p1 && p2) {
     strip.innerHTML = `
       <div class="profile-chip">
         <span class="chip-avatar" style="background:${p1.color}">${p1.initials || 'P1'}</span>
@@ -1030,11 +1034,26 @@ function renderSummaryStrip(data) {
 }
 
 function renderLclVsRevolutDonut(lcl, rev) {
-  const svg = document.getElementById('donut-svg');
-  const legend = document.getElementById('donut-legend');
+  const svg = document.getElementById('global-donut-svg') || document.getElementById('donut-svg');
+  const legend = document.getElementById('global-donut-legend') || document.getElementById('donut-legend');
+  const centerVal = document.getElementById('donut-center-total');
+  
+  const total = lcl + rev;
+  if (centerVal) {
+    centerVal.textContent = formatCurrency(total);
+  }
+
+  // Update annual projections
+  const setEl = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+  setEl('forecast-lcl-annual', formatCurrency(lcl * 12));
+  setEl('forecast-revolut-annual', formatCurrency(rev * 12));
+  setEl('forecast-total-annual', formatCurrency(total * 12));
+
   if (!svg || !legend) return;
 
-  const total = lcl + rev;
   if (total <= 0) {
     svg.innerHTML = '';
     legend.innerHTML = '<span class="text-dim">Aucune donnée</span>';
@@ -1043,28 +1062,27 @@ function renderLclVsRevolutDonut(lcl, rev) {
 
   const lclPct = (lcl / total) * 100;
   const revPct = (rev / total) * 100;
-  const r = 15.9155;
-  const lclDash = `${lclPct} ${100 - lclPct}`;
-  const revDash = `${revPct} ${100 - revPct}`;
+  const lclDash = `${lclPct.toFixed(2)} ${(100 - lclPct).toFixed(2)}`;
+  const revDash = `${revPct.toFixed(2)} ${(100 - revPct).toFixed(2)}`;
   const revOffset = -lclPct;
 
   svg.innerHTML = `
-    <circle cx="21" cy="21" r="${r}" fill="transparent" stroke="rgba(255,255,255,0.06)" stroke-width="5" transform="translate(29, 29)"></circle>
-    <circle cx="21" cy="21" r="${r}" fill="transparent" stroke="#0ea5e9" stroke-width="5" stroke-dasharray="${lclDash}" stroke-dashoffset="0" transform="translate(29, 29)"></circle>
-    <circle cx="21" cy="21" r="${r}" fill="transparent" stroke="#8b5cf6" stroke-width="5" stroke-dasharray="${revDash}" stroke-dashoffset="${revOffset}" transform="translate(29, 29)"></circle>
+    <circle cx="50" cy="50" r="38" pathLength="100" fill="transparent" stroke="rgba(255,255,255,0.06)" stroke-width="8"></circle>
+    <circle cx="50" cy="50" r="38" pathLength="100" fill="transparent" stroke="#38bdf8" stroke-width="8" stroke-dasharray="${lclDash}" stroke-dashoffset="0" transform="rotate(-90 50 50)"></circle>
+    <circle cx="50" cy="50" r="38" pathLength="100" fill="transparent" stroke="#818cf8" stroke-width="8" stroke-dasharray="${revDash}" stroke-dashoffset="${revOffset.toFixed(2)}" transform="rotate(-90 50 50)"></circle>
   `;
 
   legend.innerHTML = `
     <div class="legend-item">
       <div class="legend-label-wrap">
-        <span class="legend-color-dot" style="background: #0ea5e9;"></span>
+        <span class="legend-color-dot" style="background: #38bdf8;"></span>
         <span>LCL Package Immo Statique (${lclPct.toFixed(0)}%)</span>
       </div>
       <span class="legend-val text-cyan">${formatCurrency(lcl)}</span>
     </div>
     <div class="legend-item">
       <div class="legend-label-wrap">
-        <span class="legend-color-dot" style="background: #8b5cf6;"></span>
+        <span class="legend-color-dot" style="background: #818cf8;"></span>
         <span>Revolut Vie Commune (${revPct.toFixed(0)}%)</span>
       </div>
       <span class="legend-val text-violet">${formatCurrency(rev)}</span>
@@ -1312,10 +1330,24 @@ document.addEventListener('DOMContentLoaded', () => {
       tabBtn.setAttribute('aria-selected', 'true');
       const targetPane = document.getElementById(`pane-${tabBtn.dataset.tab}`);
       if (targetPane) targetPane.classList.add('active');
+      if (window.location.hash !== `#${tabBtn.dataset.tab}`) {
+        window.history.replaceState(null, '', `#${tabBtn.dataset.tab}`);
+      }
     });
   });
 
-  // Quick jump button
+  // Hash-based tab routing
+  function handleHashNavigation() {
+    const tabName = (window.location.hash || '').replace('#', '');
+    if (tabName) {
+      const targetBtn = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
+      if (targetBtn) targetBtn.click();
+    }
+  }
+  handleHashNavigation();
+  window.addEventListener('hashchange', handleHashNavigation);
+
+  // Quick jump buttons
   const jumpBtn = document.getElementById('btn-jump-to-simulator');
   if (jumpBtn) {
     jumpBtn.addEventListener('click', () => {
@@ -1323,6 +1355,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (simTab) simTab.click();
     });
   }
+  const jumpSim = document.getElementById('card-quick-equalizer');
+  if (jumpSim) jumpSim.addEventListener('click', () => document.getElementById('tab-btn-simulator')?.click());
+  const jumpTrv = document.getElementById('card-quick-travaux');
+  if (jumpTrv) jumpTrv.addEventListener('click', () => document.getElementById('tab-btn-travaux')?.click());
+  const jumpTrv2 = document.getElementById('btn-jump-to-travaux');
+  if (jumpTrv2) jumpTrv2.addEventListener('click', () => document.getElementById('tab-btn-travaux')?.click());
+  const jumpTrv3 = document.getElementById('dash-travaux-card');
+  if (jumpTrv3) jumpTrv3.addEventListener('click', () => document.getElementById('tab-btn-travaux')?.click());
 
   // Profile Net Incomes & Split Rule
   document.addEventListener('input', (e) => {

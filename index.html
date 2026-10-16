@@ -30,36 +30,28 @@
 
       <nav class="nav-tabs" role="tablist">
         <button class="nav-tab active" data-tab="dashboard" id="tab-btn-dashboard" role="tab" aria-selected="true">
-          <span class="tab-icon">📊</span>
           <span class="tab-text">Vue d'ensemble</span>
         </button>
         <button class="nav-tab" data-tab="simulator" id="tab-btn-simulator" role="tab" aria-selected="false">
-          <span class="tab-icon">⚖️</span>
-          <span class="tab-text">Simulateur Prêt Dynamique</span>
-          <span class="pulse-dot" title="Calcul en temps réel"></span>
+          <span class="tab-text">Simulateur Prêt</span>
         </button>
         <button class="nav-tab" data-tab="lcl" id="tab-btn-lcl" role="tab" aria-selected="false">
-          <span class="tab-icon">🏛️</span>
-          <span class="tab-text">Compte LCL <small>(Package Immo & Taxe)</small></span>
+          <span class="tab-text">Compte LCL</span>
         </button>
         <button class="nav-tab" data-tab="revolut" id="tab-btn-revolut" role="tab" aria-selected="false">
-          <span class="tab-icon">💳</span>
-          <span class="tab-text">Compte Revolut <small>(Vie courante)</small></span>
+          <span class="tab-text">Compte Revolut</span>
         </button>
         <button class="nav-tab" data-tab="travaux" id="tab-btn-travaux" role="tab" aria-selected="false">
-          <span class="tab-icon">🔨</span>
-          <span class="tab-text">Enveloppe Travaux <small>(50 000 €)</small></span>
-          <span class="pulse-dot" style="background:#10b981; box-shadow:0 0 8px #10b981;" title="Avances et solde travaux"></span>
+          <span class="tab-text">Enveloppe Travaux</span>
         </button>
         <button class="nav-tab" data-tab="profiles" id="tab-btn-profiles" role="tab" aria-selected="false">
-          <span class="tab-icon">👥</span>
           <span class="tab-text">Profils & Clés</span>
         </button>
       </nav>
 
       <div class="header-actions">
         <a href="tests/runner.html" class="btn btn-secondary btn-sm" id="btn-tests-runner" title="Lancer la suite de tests unitaires automatisée">
-          🧪 Tests (40/40)
+          Tests (40/40)
         </a>
         <button class="btn btn-secondary btn-sm" id="btn-export-data" title="Sauvegarder les données en JSON">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -297,7 +289,7 @@
         <div class="glass-card mt-6 clickable" id="dash-travaux-card" title="Cliquez pour ouvrir l'enveloppe travaux">
           <div class="card-header">
             <div>
-              <div class="badge-emerald mb-2">🔨 Rénovation & Chantier Maison</div>
+              <div class="badge-emerald mb-2">Rénovation & Chantier Maison</div>
               <h2 class="card-title">Enveloppe Travaux Commune (50 000,00 €)</h2>
               <p class="card-subtitle">Suivi du fonds travaux, des factures payées et des avances personnelles de chaque conjoint</p>
             </div>
@@ -377,7 +369,7 @@
       <!-- ================= TAB 2: SIMULATOR PRÊT DYNAMIQUE ================= -->
       <section class="tab-pane" id="pane-simulator">
         <div class="simulator-hero">
-          <div class="badge-amber">⚖️ Moteur de Calcul Dynamique en Temps Réel</div>
+          <div class="badge-amber">Moteur de calcul en temps réel</div>
           <h2 class="hero-title">Simulateur Prêt Familial & Historique de Remboursement</h2>
           <p class="hero-subtitle" id="sim-hero-description">
             Le père d'<strong>Ariane</strong> lui a donné <strong>25 000 €</strong> en apport. <strong>Axel</strong> s'est engagé à lui rembourser la moitié (50% = 12 500 €) sur <strong>15 ans</strong> (180 mois, même durée que le prêt bancaire). Définis ton <strong>mois de départ</strong> pour suivre précisément ce qui a déjà été versé et ce qu'il reste à rembourser.
@@ -952,19 +944,19 @@
         <div class="travaux-hero-banner glass-card">
           <div class="travaux-hero-content">
             <div class="travaux-hero-left">
-              <div class="badge-emerald mb-2">🔨 Financement & Rénovation Maison</div>
-              <h2 class="card-title" style="font-size:1.4rem;">Enveloppe Travaux Rénovation</h2>
+              <div class="badge-emerald mb-2">Financement & Rénovation Maison</div>
+              <h2 class="card-title" style="font-size:1.3rem;">Enveloppe Travaux Rénovation</h2>
               <p class="card-subtitle">
                 Suivi du compte travaux commun de <strong>50 000,00 €</strong>, contrôle des dépenses engagées et rééquilibrage automatisé des avances personnelles entre <strong>Axel</strong> et <strong>Ariane</strong>.
               </p>
             </div>
             <div class="travaux-hero-actions">
               <button class="btn btn-primary" id="btn-open-travaux-modal">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 + Ajouter une dépense travaux
               </button>
               <button class="btn btn-secondary btn-sm" id="btn-edit-travaux-budget" title="Modifier le montant total de l'enveloppe (actuellement 50 000 €)">
-                ⚙️ Ajuster l'enveloppe
+                Ajuster l'enveloppe
               </button>
             </div>
           </div>
