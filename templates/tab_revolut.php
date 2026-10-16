@@ -59,9 +59,9 @@ $revTotal = $budgets['revolutTotal'] ?? 1155;
                     </div>
                     <div class="envelope-target font-mono"><?= Format::currency($allocated) ?></div>
                   </div>
-                  <div class="envelope-bar-wrap">
-                    <div class="envelope-bar-fill" style="width: <?= $pct ?>%;"></div>
-                  </div>
+                    <div class="envelope-bar-wrap">
+                      <div class="envelope-bar-fill" style="width: <?= (int)$pct ?>%;"></div>
+                    </div>
                 </div>
               <?php endforeach; ?>
             </div>

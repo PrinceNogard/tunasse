@@ -1,0 +1,17 @@
+{
+  "anti-regression-gate": {
+    "enabled": true,
+    "PostToolUse": [
+      {
+        "matcher": "replace_file_content|multi_replace_file_content|write_to_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "php scripts/hook_runner.php",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

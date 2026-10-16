@@ -339,8 +339,8 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
               </div>
               <div class="status-filter-pills" role="radiogroup">
                 <button type="button" class="filter-pill active" data-filter="all" id="filter-trv-all">Tous (<span id="count-trv-all"><?= count($travauxItems) ?></span>)</button>
-                <button type="button" class="filter-pill" data-filter="unreimbursed" id="filter-trv-unreimbursed">Non remboursés (<span id="count-trv-unreimbursed"><?= $unreimbursedCount ?></span>)</button>
-                <button type="button" class="filter-pill" data-filter="reimbursed" id="filter-trv-reimbursed">Remboursés (<span id="count-trv-reimbursed"><?= $reimbursedCount ?></span>)</button>
+                <button type="button" class="filter-pill" data-filter="unreimbursed" id="filter-trv-unreimbursed">Non remboursés (<span id="count-trv-unreimbursed"><?= (int)$unreimbursedCount ?></span>)</button>
+                <button type="button" class="filter-pill" data-filter="reimbursed" id="filter-trv-reimbursed">Remboursés (<span id="count-trv-reimbursed"><?= (int)$reimbursedCount ?></span>)</button>
               </div>
               <button class="btn btn-primary btn-sm" id="btn-add-travaux-row">
                 + Ajouter une ligne
@@ -398,7 +398,7 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
                   <td class="text-right font-mono text-violet" id="tfoot-ariane-total"><?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?></td>
                   <td class="text-right font-mono text-amber" id="tfoot-consumed-total"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?></td>
                   <td colspan="2" class="text-center">
-                    <span class="badge-subtle" id="tfoot-status-summary"><?= $unreimbursedCount ?> non remboursé(s)</span>
+                    <span class="badge-subtle" id="tfoot-status-summary"><?= (int)$unreimbursedCount ?> non remboursé(s)</span>
                   </td>
                 </tr>
                 <tr class="tfoot-solde-row">
