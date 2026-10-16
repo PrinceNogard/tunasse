@@ -13,7 +13,7 @@ $p2 = $state['profiles'][1] ?? ['name' => 'Ariane', 'initials' => 'AR', 'color' 
           </svg>
         </div>
         <div>
-          <h1 class="brand-title">DuoBudget <span class="brand-badge">PHP Edition</span></h1>
+          <h1 class="brand-title">DuoBudget</h1>
           <div class="header-profiles-strip" id="header-profiles-display">
             <div class="profile-chip">
               <span class="chip-avatar" style="background:<?= htmlspecialchars($p1['color']) ?>"><?= htmlspecialchars($p1['initials']) ?></span>
@@ -57,9 +57,5 @@ $p2 = $state['profiles'][1] ?? ['name' => 'Ariane', 'initials' => 'AR', 'color' 
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export
         </a>
-        <button type="button" class="btn btn-primary btn-sm" id="btn-quick-expense" title="Enregistrer une dépense">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          + Dépense
-        </button>
       </div>
     </header>

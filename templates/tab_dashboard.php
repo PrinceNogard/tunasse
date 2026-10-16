@@ -185,9 +185,6 @@ $recentExpenses = array_slice(array_reverse($state['expenses'] ?? []), 0, 8);
               <h2 class="card-title">Virements Automatiques Mensuels Programmés</h2>
               <p class="card-subtitle">Ce qu'<?= htmlspecialchars($p1['name']) ?> et <?= htmlspecialchars($p2['name']) ?> mettent chaque mois de manière automatique sur le compte LCL et le compte Revolut</p>
             </div>
-            <button type="button" class="btn btn-primary btn-sm" id="btn-quick-expense-banner">
-              + Ajouter une dépense
-            </button>
           </div>
 
           <div class="table-responsive">

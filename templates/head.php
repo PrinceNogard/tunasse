@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DuoBudget • Gestion Financière de Couple & Prêt Familial (PHP Edition)</title>
-  <meta name="description" content="Application PHP complète de gestion financière pour couple : comptes joints LCL et Revolut, égaliseur de prêt familial et enveloppe travaux 50 000 €.">
+  <title>DuoBudget • Gestion Financière de Couple & Prêt Familial</title>
+  <meta name="description" content="Application complète de gestion financière pour couple : comptes joints LCL et Revolut, égaliseur de prêt familial et enveloppe travaux 50 000 €.">
 
   <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
