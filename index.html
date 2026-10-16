@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DuoBudget • Gestion de Budget de Couple & Simulateur de Prêt Dynamique</title>
+  <meta name="description" content="Application de gestion de budget de couple pour comptes Revolut et LCL avec profils personnalisables (Axel & Ariane), package prêt immobilier & taxe foncière, et simulateur de prêt dynamique.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- TOP NAVIGATION BAR -->
+    <header class="app-header">
+      <div class="brand-area">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">DuoBudget <span class="brand-badge">Couple Edition</span></h1>
+          <div class="header-profiles-strip" id="header-profiles-display">
+            <!-- Dynamically populated: Axel & Ariane -->
+          </div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" role="tablist">
+        <button class="nav-tab active" data-tab="dashboard" id="tab-btn-dashboard" role="tab" aria-selected="true">
+          <span class="tab-icon">📊</span>
+          <span class="tab-text">Vue d'ensemble</span>
+        </button>
+        <button class="nav-tab" data-tab="simulator" id="tab-btn-simulator" role="tab" aria-selected="false">
+          <span class="tab-icon">⚖️</span>
+          <span class="tab-text">Simulateur Prêt Dynamique</span>
+          <span class="pulse-dot" title="Calcul en temps réel"></span>
+        </button>
+        <button class="nav-tab" data-tab="lcl" id="tab-btn-lcl" role="tab" aria-selected="false">
+          <span class="tab-icon">🏛️</span>
+          <span class="tab-text">Compte LCL <small>(Package Immo & Taxe)</small></span>
+        </button>
+        <button class="nav-tab" data-tab="revolut" id="tab-btn-revolut" role="tab" aria-selected="false">
+          <span class="tab-icon">💳</span>
+          <span class="tab-text">Compte Revolut <small>(Vie courante)</small></span>
+        </button>
+        <button class="nav-tab" data-tab="profiles" id="tab-btn-profiles" role="tab" aria-selected="false">
+          <span class="tab-icon">👥</span>
+          <span class="tab-text">Profils & Clés</span>
+        </button>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm" id="btn-export-data" title="Sauvegarder les données en JSON">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <button class="btn btn-primary btn-sm" id="btn-quick-expense" title="Enregistrer une dépense">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          + Dépense
+        </button>
+      </div>
+    </header>
+
+    <!-- SUMMARY HERO STRIP -->
+    <section class="summary-strip">
+      <div class="summary-card stat-total">
+        <div class="card-icon-wrapper blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Budget Mensuel Total</span>
+          <span class="stat-value" id="top-total-budget">0,00 €</span>
+          <span class="stat-subtext" id="top-total-annual">0,00 € / an</span>
+        </div>
+      </div>
+
+      <div class="summary-card stat-lcl">
+        <div class="card-icon-wrapper cyan">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-header-row">
+            <span class="stat-label">LCL • Package Immo Statique</span>
+            <span class="bank-tag lcl-tag">LCL</span>
+          </div>
+          <span class="stat-value" id="top-lcl-budget">0,00 €</span>
+          <span class="stat-subtext" id="top-lcl-subtext">Crédit immo, assurances & taxe</span>
+        </div>
+      </div>
+
+      <div class="summary-card stat-revolut">
+        <div class="card-icon-wrapper violet">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-header-row">
+            <span class="stat-label">Revolut • Vie Courante</span>
+            <span class="bank-tag rev-tag">Revolut</span>
+          </div>
+          <span class="stat-value" id="top-revolut-budget">0,00 €</span>
+          <span class="stat-subtext" id="top-revolut-spent">0,00 € dépensés ce mois</span>
+        </div>
+      </div>
+
+      <div class="summary-card stat-equalizer clickable" id="card-quick-equalizer" title="Cliquez pour ouvrir le simulateur de prêt">
+        <div class="card-icon-wrapper amber">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-header-row">
+            <span class="stat-label">Remboursement Prêt Familial</span>
+            <span class="bank-tag amber-tag" id="top-repayment-tag">15 ans</span>
+          </div>
+          <span class="stat-value text-amber" id="top-repayment-monthly">+69,44 €</span>
+          <span class="stat-subtext" id="top-repayment-subtext">Axel rembourse Ariane</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN VIEW CONTAINER -->
+    <main class="main-content">
+
+      <!-- ================= TAB 1: DASHBOARD ================= -->
+      <section class="tab-pane active" id="pane-dashboard">
+        <div class="grid-2-col">
+          <!-- Monthly Couple Breakdown Card -->
+          <div class="glass-card contribution-card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Répartition Mensuelle du Budget</h2>
+                <p class="card-subtitle">Contribution exacte de chaque profil après rééquilibrage du prêt familial</p>
+              </div>
+              <div class="split-mode-pill" id="split-mode-label">50 / 50 + Prêt compensé</div>
+            </div>
+
+            <!-- Couple Dynamic Cards -->
+            <div class="couple-balance-grid">
+              <!-- Profile 1: Axel -->
+              <div class="partner-card you-card" id="card-partner-1">
+                <div class="partner-avatar" id="avatar-p1">
+                  <span class="avatar-initials" id="initials-p1">AX</span>
+                </div>
+                <div class="partner-meta">
+                  <span class="partner-name" id="name-p1-label">Contribution d'Axel</span>
+                  <div class="partner-amount" id="contrib-p1-total">0,00 €</div>
+                  <span class="partner-detail text-amber" id="contrib-p1-breakdown">dont +69,44 € pour prêt familial</span>
+                </div>
+                <div class="partner-bar-wrapper">
+                  <div class="partner-bar" id="bar-p1" style="width: 53%;"></div>
+                </div>
+                <div class="partner-sublist">
+                  <div class="sublist-item">
+                    <span>Part LCL (Package Immo & Taxe)</span>
+                    <strong id="contrib-p1-lcl">0,00 €</strong>
+                  </div>
+                  <div class="sublist-item">
+                    <span>Part Revolut (Vie courante)</span>
+                    <strong id="contrib-p1-rev">0,00 €</strong>
+                  </div>
+                  <div class="sublist-item highlight-amber">
+                    <span id="contrib-p1-loan-label">Mensualité prêt familial</span>
+                    <strong id="contrib-p1-loan">+69,44 €</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Profile 2: Ariane -->
+              <div class="partner-card ariane-card" id="card-partner-2">
+                <div class="partner-avatar ariane-avatar" id="avatar-p2">
+                  <span class="avatar-initials" id="initials-p2">AR</span>
+                </div>
+                <div class="partner-meta">
+                  <span class="partner-name" id="name-p2-label">Contribution d'Ariane</span>
+                  <div class="partner-amount" id="contrib-p2-total">0,00 €</div>
+                  <span class="partner-detail text-emerald" id="contrib-p2-breakdown">mensualité prêt déduite</span>
+                </div>
+                <div class="partner-bar-wrapper">
+                  <div class="partner-bar ariane" id="bar-p2" style="width: 47%;"></div>
+                </div>
+                <div class="partner-sublist">
+                  <div class="sublist-item">
+                    <span>Part LCL (Package Immo & Taxe)</span>
+                    <strong id="contrib-p2-lcl">0,00 €</strong>
+                  </div>
+                  <div class="sublist-item">
+                    <span>Part Revolut (Vie courante)</span>
+                    <strong id="contrib-p2-rev">0,00 €</strong>
+                  </div>
+                  <div class="sublist-item highlight-green">
+                    <span id="contrib-p2-loan-label">Crédit prêt reçu / déduit</span>
+                    <strong id="contrib-p2-loan">-69,44 €</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Clear explainer on difference -->
+            <div class="smart-notice" id="equalizer-dashboard-notice">
+              <div class="notice-icon">💡</div>
+              <div class="notice-text" id="equalizer-notice-text">
+                <!-- Dynamically generated based on profiles and active loan method -->
+              </div>
+            </div>
+
+            <!-- In-dashboard Quick Slider for convenience -->
+            <div class="quick-sim-dashboard mt-4">
+              <div class="quick-sim-header">
+                <span class="quick-sim-title">⚡ Ajustement rapide du Prêt Familial :</span>
+                <span class="quick-sim-val text-amber font-mono" id="dash-quick-loan-val">25 000 € • 15 ans = 69,44 €/m</span>
+              </div>
+              <div class="quick-sim-controls">
+                <input type="range" id="dash-slider-amount" class="range-slider" min="5000" max="60000" step="500" value="25000">
+                <div class="quick-presets-row">
+                  <button type="button" class="preset-btn" data-amount="15000">15 k€</button>
+                  <button type="button" class="preset-btn active" data-amount="25000">25 k€ (Défaut)</button>
+                  <button type="button" class="preset-btn" data-amount="30000">30 k€</button>
+                  <button type="button" class="preset-btn" data-amount="40000">40 k€</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btn-jump-to-simulator">Ouvrir le simulateur complet →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Charts / Overview -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Poids des Dépenses</h2>
+                <p class="card-subtitle">Répartition Maison Statique (LCL) vs Dépenses Courantes (Revolut)</p>
+              </div>
+            </div>
+
+            <div class="chart-container">
+              <div class="donut-chart-wrapper">
+                <svg viewBox="0 0 100 100" class="donut-svg" id="global-donut-svg">
+                  <!-- Generated dynamically via JS -->
+                </svg>
+                <div class="donut-center-info">
+                  <span class="donut-center-value" id="donut-center-total">0 €</span>
+                  <span class="donut-center-label">Mensuel</span>
+                </div>
+              </div>
+
+              <div class="donut-legend" id="global-donut-legend">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Annual projection widget -->
+            <div class="annual-forecast-box">
+              <div class="forecast-header">
+                <span class="forecast-title">Projection Annuelle du Foyer</span>
+                <span class="forecast-badge">Sur 12 mois</span>
+              </div>
+              <div class="forecast-grid">
+                <div class="forecast-item">
+                  <span class="forecast-label">LCL (Statique Annuel)</span>
+                  <span class="forecast-val" id="forecast-lcl-annual">0,00 €</span>
+                </div>
+                <div class="forecast-item">
+                  <span class="forecast-label">Revolut (Vie Annuelle)</span>
+                  <span class="forecast-val" id="forecast-revolut-annual">0,00 €</span>
+                </div>
+                <div class="forecast-item highlight">
+                  <span class="forecast-label">Total Foyer Annuel</span>
+                  <span class="forecast-val" id="forecast-total-annual">0,00 €</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions / Activity Strip -->
+        <div class="glass-card mt-6">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Dernières Dépenses Communes</h2>
+              <p class="card-subtitle">Historique des achats sur le compte commun Revolut ou LCL</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-view-all-expenses">Voir toutes les dépenses</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table" id="recent-expenses-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Compte</th>
+                  <th>Catégorie</th>
+                  <th>Payé par</th>
+                  <th class="text-right">Montant</th>
+                  <th class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="recent-expenses-tbody">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 2: SIMULATOR PRÊT DYNAMIQUE ================= -->
+      <section class="tab-pane" id="pane-simulator">
+        <div class="simulator-hero">
+          <div class="badge-amber">⚖️ Moteur de Calcul Dynamique en Temps Réel</div>
+          <h2 class="hero-title">Simulateur Prêt Familial & Historique de Remboursement</h2>
+          <p class="hero-subtitle" id="sim-hero-description">
+            Le père d'<strong>Ariane</strong> lui a donné <strong>25 000 €</strong> en apport. <strong>Axel</strong> s'est engagé à lui rembourser la moitié (50% = 12 500 €) sur <strong>15 ans</strong> (180 mois, même durée que le prêt bancaire). Définis ton <strong>mois de départ</strong> pour suivre précisément ce qui a déjà été versé et ce qu'il reste à rembourser.
+          </p>
+        </div>
+
+        <div class="grid-2-col">
+          <!-- Controls Panel -->
+          <div class="glass-card controls-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Paramètres du Prêt</h3>
+                <p class="card-subtitle">Curseurs en temps réel et sélection de la date de départ</p>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="btn-reset-simulator" title="Réinitialiser aux 25 000 € / 15 ans par défaut">
+                ↺ Réinitialiser (25k€ / 15 ans)
+              </button>
+            </div>
+
+            <!-- Generic Borrower / Lender Selector -->
+            <div class="loan-roles-box">
+              <div class="form-group-row">
+                <div class="form-field">
+                  <label for="select-loan-borrower">Emprunteur (qui rembourse)</label>
+                  <select id="select-loan-borrower" class="custom-select">
+                    <!-- Populated from profiles -->
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="select-loan-lender">Prêteur (qui a fourni l'apport)</label>
+                  <select id="select-loan-lender" class="custom-select">
+                    <!-- Populated from profiles -->
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- NEW: Start Month & Already Paid Section -->
+            <div class="loan-start-box">
+              <div class="slider-header">
+                <label for="input-loan-start-month" class="slider-label">
+                  📅 Mois de départ du remboursement
+                </label>
+                <div class="slider-input-badge">
+                  <span id="label-elapsed-months" class="text-amber font-mono" style="font-weight:700;">8 mois</span>
+                  <span style="font-size:0.75rem; color:var(--text-dim);">écoulés</span>
+                </div>
+              </div>
+
+              <div class="form-group-row mt-2">
+                <div class="form-field" style="margin-bottom:0;">
+                  <label for="input-loan-start-month" style="font-size:0.75rem; color:var(--text-dim);">Date du premier versement</label>
+                  <input type="month" id="input-loan-start-month" class="custom-input" value="2026-03">
+                </div>
+                <div class="form-field" style="margin-bottom:0;">
+                  <label style="font-size:0.75rem; color:var(--text-dim);">Compteur de mensualités payées</label>
+                  <div class="slider-input-badge" style="width:100%; justify-content:space-between; padding:6px 10px;">
+                    <span style="font-size:0.8rem; color:var(--text-muted);">Mois payés :</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <button type="button" class="btn-step" id="btn-step-minus" title="Moins un mois">−</button>
+                      <input type="number" id="num-months-paid" class="num-input" value="8" min="0" max="360" style="width:48px; text-align:center;">
+                      <button type="button" class="btn-step" id="btn-step-plus" title="Plus un mois">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick presets for start month -->
+              <div class="quick-presets-row mt-2">
+                <button type="button" class="preset-btn" data-start="current">Mois actuel</button>
+                <button type="button" class="preset-btn" data-start="6m">Il y a 6 mois</button>
+                <button type="button" class="preset-btn active" data-start="8m">Il y a 8 mois (Mars 2026)</button>
+                <button type="button" class="preset-btn" data-start="1y">Il y a 1 an</button>
+                <button type="button" class="preset-btn" data-start="jan24">Janvier 2024</button>
+              </div>
+
+              <!-- Summary pill of progress -->
+              <div class="loan-history-pills mt-3">
+                <div class="history-pill">
+                  <span class="history-pill-lbl">Déjà versé à Ariane</span>
+                  <strong class="history-pill-val text-emerald" id="sim-paid-sum-pill">0,00 €</strong>
+                </div>
+                <div class="history-pill">
+                  <span class="history-pill-lbl">Reste à rembourser</span>
+                  <strong class="history-pill-val text-amber" id="sim-remaining-sum-pill">0,00 €</strong>
+                </div>
+                <div class="history-pill">
+                  <span class="history-pill-lbl">Fin estimée</span>
+                  <strong class="history-pill-val text-cyan" id="sim-end-date-pill">Février 2041</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slider 1: Total Amount -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="slider-loan-amount" class="slider-label">
+                  Montant total de l'apport / somme prêtée
+                </label>
+                <div class="slider-input-badge">
+                  <input type="number" id="num-loan-amount" class="num-input" value="25000" min="500" max="250000" step="500">
+                  <span>€</span>
+                </div>
+              </div>
+              <input type="range" id="slider-loan-amount" class="range-slider" min="5000" max="60000" step="500" value="25000">
+              
+              <!-- Quick presets for amount -->
+              <div class="quick-presets-row">
+                <button type="button" class="preset-btn" data-target="amount" data-val="10000">10 000 €</button>
+                <button type="button" class="preset-btn" data-target="amount" data-val="15000">15 000 €</button>
+                <button type="button" class="preset-btn active" data-target="amount" data-val="25000">25 000 € (Défaut)</button>
+                <button type="button" class="preset-btn" data-target="amount" data-val="35000">35 000 €</button>
+                <button type="button" class="preset-btn" data-target="amount" data-val="50000">50 000 €</button>
+              </div>
+            </div>
+
+            <!-- Slider 2: User Share (%) -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="slider-user-share" class="slider-label">
+                  Part remboursée par l'emprunteur
+                </label>
+                <div class="slider-input-badge">
+                  <input type="number" id="num-user-share" class="num-input" value="50" min="5" max="100" step="5">
+                  <span>%</span>
+                </div>
+              </div>
+              <input type="range" id="slider-user-share" class="range-slider" min="10" max="100" step="5" value="50">
+              
+              <!-- Quick presets for share -->
+              <div class="quick-presets-row">
+                <button type="button" class="preset-btn" data-target="share" data-val="25">25% (Quart)</button>
+                <button type="button" class="preset-btn active" data-target="share" data-val="50">50% (Moitié = 12 500 €)</button>
+                <button type="button" class="preset-btn" data-target="share" data-val="75">75%</button>
+                <button type="button" class="preset-btn" data-target="share" data-val="100">100% (Totalité)</button>
+              </div>
+            </div>
+
+            <!-- Slider 3: Duration in Years & Months -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="slider-loan-duration" class="slider-label">Durée de remboursement</label>
+                <div class="duration-display">
+                  <span id="display-duration-years">15</span> ans
+                  <span class="duration-months">(<span id="display-duration-months">180</span> mois)</span>
+                </div>
+              </div>
+              <input type="range" id="slider-loan-duration" class="range-slider" min="1" max="25" step="1" value="15">
+              
+              <!-- Quick presets for duration -->
+              <div class="quick-presets-row">
+                <button type="button" class="preset-btn" data-target="duration" data-val="5">5 ans (60m)</button>
+                <button type="button" class="preset-btn" data-target="duration" data-val="10">10 ans (120m)</button>
+                <button type="button" class="preset-btn active" data-target="duration" data-val="15">15 ans (180m - Prêt Immo)</button>
+                <button type="button" class="preset-btn" data-target="duration" data-val="20">20 ans (240m)</button>
+              </div>
+            </div>
+
+            <!-- Slider 4: Interest Rate (Default 0% for family loan) -->
+            <div class="control-group">
+              <div class="slider-header">
+                <label for="slider-loan-interest" class="slider-label">Taux d'intérêt annuel (prêt familial amical)</label>
+                <div class="slider-input-badge">
+                  <input type="number" id="num-loan-interest" class="num-input" value="0.0" min="0" max="10" step="0.1">
+                  <span>%</span>
+                </div>
+              </div>
+              <input type="range" id="slider-loan-interest" class="range-slider" min="0" max="5" step="0.1" value="0">
+              <div class="slider-ticks">
+                <span class="active-tick">0,0% (Sans intérêt)</span>
+                <span>1,5%</span>
+                <span>3,0%</span>
+                <span>5,0%</span>
+              </div>
+            </div>
+
+            <!-- Equalization Method Selector -->
+            <div class="payment-method-selector">
+              <div class="method-title">Méthode d'application dans votre quotidien :</div>
+              <div class="method-options">
+                <label class="method-option-card">
+                  <input type="radio" name="repay-method" value="offset" id="method-offset" checked>
+                  <div class="method-box">
+                    <span class="method-radio-custom"></span>
+                    <div>
+                      <span class="method-name">Ajustement Compte Commun LCL (Recommandé)</span>
+                      <p class="method-desc" id="method-desc-offset">
+                        Zéro virement privé ! Axel verse <strong>+69,44 €</strong> de plus au compte joint LCL et Ariane verse <strong>-69,44 €</strong> de moins.
+                      </p>
+                    </div>
+                  </div>
+                </label>
+
+                <label class="method-option-card">
+                  <input type="radio" name="repay-method" value="direct" id="method-direct">
+                  <div class="method-box">
+                    <span class="method-radio-custom"></span>
+                    <div>
+                      <span class="method-name">Virement direct d'Axel à Ariane</span>
+                      <p class="method-desc" id="method-desc-direct">
+                        Vous alimentez à 50/50 le compte joint, et Axel effectue un virement mensuel séparé de <strong>69,44 €</strong> sur le compte perso d'Ariane.
+                      </p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Simulator Dynamic Results & Cards -->
+          <div class="simulator-results-col">
+            <!-- Key Highlight Results Card -->
+            <div class="glass-card result-hero-card">
+              <div class="result-top-badge">Résultat calculé en temps réel</div>
+              
+              <div class="big-monthly-result">
+                <span class="big-number" id="sim-monthly-payment">69,44 €</span>
+                <span class="big-period">/ mois</span>
+              </div>
+              <p class="result-clarification" id="sim-clarification-text">
+                Montant exact de la mensualité due par <strong>Axel</strong> à <strong>Ariane</strong> pendant <strong>15 ans</strong> (180 mois).
+              </p>
+
+              <!-- Detailed Mathematical Breakdown Box -->
+              <div class="result-details-grid">
+                <div class="res-item">
+                  <span class="res-item-label">Capital net emprunté</span>
+                  <span class="res-item-val" id="sim-total-borrowed">12 500,00 €</span>
+                  <small id="sim-borrowed-sub">(50% de 25 000 €)</small>
+                </div>
+                <div class="res-item">
+                  <span class="res-item-label">Durée totale</span>
+                  <span class="res-item-val" id="sim-total-months">180 mois</span>
+                  <small id="sim-years-sub">(15 années)</small>
+                </div>
+                <div class="res-item">
+                  <span class="res-item-label">Intérêts totaux</span>
+                  <span class="res-item-val" id="sim-total-interests">0,00 €</span>
+                  <small id="sim-interest-sub">(Taux à 0,00%)</small>
+                </div>
+                <div class="res-item">
+                  <span class="res-item-label">Coût total remboursé</span>
+                  <span class="res-item-val highlight-amber" id="sim-grand-total">12 500,00 €</span>
+                  <small>À terme</small>
+                </div>
+              </div>
+
+              <!-- Visual Explanation on Account Offset -->
+              <div class="offset-math-explainer" id="offset-math-box">
+                <div class="explainer-heading">
+                  <span class="explainer-icon">🔍</span>
+                  <strong>L'explication mathématique : Combien en plus par mois ?</strong>
+                </div>
+                <div class="explainer-content" id="offset-explainer-content">
+                  <!-- Populated by JS based on selected method -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Reimbursement Tracker & Amortization preview -->
+            <div class="glass-card mt-6">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Progression Réelle & Échéancier</h3>
+                  <p class="card-subtitle">Visualisation basée sur la date de départ et les mensualités écoulées</p>
+                </div>
+                <div class="month-counter-badge" id="sim-counter-badge">
+                  Mois 8 / <span id="track-total-months">180</span>
+                </div>
+              </div>
+
+              <div class="progress-bar-container">
+                <div class="progress-fill amber-gradient" id="sim-progress-fill" style="width: 4.4%;"></div>
+              </div>
+              <div class="progress-meta">
+                <span>Remboursé : <strong id="sim-paid-so-far" class="text-emerald">555,52 €</strong></span>
+                <span>Restant dû : <strong id="sim-remaining-capital" class="text-amber">11 944,48 €</strong></span>
+              </div>
+              <div class="time-remaining-meta">
+                <span id="sim-time-remaining-label">⏱️ 14 ans et 4 mois restants (172 mensualités)</span>
+              </div>
+
+              <div class="quick-amort-table-wrapper mt-3">
+                <table class="custom-table tight-table">
+                  <thead>
+                    <tr>
+                      <th>Période</th>
+                      <th>Mensualité</th>
+                      <th>Cumul remboursé</th>
+                      <th>Capital restant</th>
+                      <th class="text-center">Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sim-amort-tbody">
+                    <!-- Populated via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 3: COMPTE LCL (PACKAGE MAISON & PRÊT IMMO) ================= -->
+      <section class="tab-pane" id="pane-lcl">
+        <div class="section-banner lcl-banner">
+          <div class="banner-icon">🏛️</div>
+          <div>
+            <h2 class="banner-title">Compte Commun LCL • Package Prêt Immo & Logement</h2>
+            <p class="banner-desc">Regroupement statique complet : Package Crédit Immobilier + Assurances, Fiscalité (Taxe Foncière) & Charges fixes.</p>
+          </div>
+          <div class="banner-total">
+            <span class="banner-total-label">Total Fixe Package / Mois</span>
+            <span class="banner-total-val text-cyan" id="lcl-banner-total">0,00 €</span>
+            <span class="banner-total-annual" id="lcl-banner-annual">0,00 € / an</span>
+          </div>
+        </div>
+
+        <div class="grid-2-col">
+          <!-- LCL Structured Packages Column -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Le Gros Package Maison Statique</h3>
+                <p class="card-subtitle">Ventilation des postes de crédit, assurances et charges foncières</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-add-lcl-item">
+                + Ajouter une ligne
+              </button>
+            </div>
+
+            <!-- PACKAGE 1: CREDIT IMMOBILIER & ASSURANCES -->
+            <div class="package-section-card mb-4">
+              <div class="package-card-header">
+                <div class="package-title-wrap">
+                  <span class="package-icon">🏠</span>
+                  <div>
+                    <h4 class="package-title">Package Crédit Immobilier & Assurances</h4>
+                    <span class="package-sub">Prêt bancaire amortissable (15 ans) + assurances obligatoires</span>
+                  </div>
+                </div>
+                <div class="package-subtotal-badge">
+                  <span class="subtotal-val" id="subtotal-credit-pack">1 222,00 €</span>
+                  <span class="subtotal-label">/ mois</span>
+                </div>
+              </div>
+
+              <div class="package-items-container" id="lcl-credit-items">
+                <!-- Populated via JS: Prêt immo, Assurance emprunteur, Assurance habitation -->
+              </div>
+            </div>
+
+            <!-- PACKAGE 2: TAXE FONCIERE STATIQUE -->
+            <div class="package-section-card mb-4 taxe-fonciere-card">
+              <div class="package-card-header">
+                <div class="package-title-wrap">
+                  <span class="package-icon">📋</span>
+                  <div>
+                    <h4 class="package-title">Fiscalité Logement • Taxe Foncière Statique</h4>
+                    <span class="package-sub">Mensualisation automatique pour lisser la dépense sur l'année</span>
+                  </div>
+                </div>
+                <div class="package-subtotal-badge">
+                  <span class="subtotal-val text-amber" id="subtotal-taxe-pack">110,00 €</span>
+                  <span class="subtotal-label">/ mois</span>
+                </div>
+              </div>
+
+              <!-- Interactive Taxe Foncière editor right inside the card -->
+              <div class="taxe-interactive-editor">
+                <div class="form-group-row">
+                  <div class="form-field" style="margin-bottom:0;">
+                    <label for="input-tf-annual" style="font-size:0.78rem;">Montant Annuel de la Taxe (€ / an)</label>
+                    <div class="slider-input-badge">
+                      <input type="number" id="input-tf-annual" class="num-input" value="1320" step="10" style="width:85px;">
+                      <span>€/an</span>
+                    </div>
+                  </div>
+                  <div class="form-field" style="margin-bottom:0;">
+                    <label for="input-tf-monthly" style="font-size:0.78rem;">Provision Mensuelle (€ / mois)</label>
+                    <div class="slider-input-badge">
+                      <input type="number" id="input-tf-monthly" class="num-input" value="110" step="1" style="width:85px;">
+                      <span>€/mois</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="taxe-hint-text mt-2">
+                  💡 En modifiant l'un des deux champs, l'autre se synchronise automatiquement (Total annuel ÷ 12).
+                </p>
+              </div>
+            </div>
+
+            <!-- PACKAGE 3: CHARGES & PREVOYANCE MAISON -->
+            <div class="package-section-card">
+              <div class="package-card-header">
+                <div class="package-title-wrap">
+                  <span class="package-icon">🔨</span>
+                  <div>
+                    <h4 class="package-title">Prévoyance & Entretien Logement</h4>
+                    <span class="package-sub">Provision travaux, réparations ou charges de copropriété</span>
+                  </div>
+                </div>
+                <div class="package-subtotal-badge">
+                  <span class="subtotal-val" id="subtotal-maintenance-pack">50,00 €</span>
+                  <span class="subtotal-label">/ mois</span>
+                </div>
+              </div>
+
+              <div class="package-items-container" id="lcl-maintenance-items">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- LCL Breakdown & Allocation Column -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Répartition du Package LCL</h3>
+                <p class="card-subtitle">Quote-part mensuelle à verser pour couvrir la maison statique</p>
+              </div>
+            </div>
+
+            <div class="lcl-split-box">
+              <div class="split-row">
+                <div class="split-user">
+                  <div class="avatar-sm" id="lcl-avatar-p1">AX</div>
+                  <div>
+                    <div class="split-user-name" id="lcl-p1-name">Part mensuelle d'Axel</div>
+                    <div class="split-user-sub" id="lcl-p1-sub">50% + Prêt familial compensé</div>
+                  </div>
+                </div>
+                <div class="split-amount-badge text-cyan" id="lcl-p1-amount">0,00 €</div>
+              </div>
+
+              <div class="split-row">
+                <div class="split-user">
+                  <div class="avatar-sm ariane" id="lcl-avatar-p2">AR</div>
+                  <div>
+                    <div class="split-user-name" id="lcl-p2-name">Part mensuelle d'Ariane</div>
+                    <div class="split-user-sub" id="lcl-p2-sub">50% - Prêt familial compensé</div>
+                  </div>
+                </div>
+                <div class="split-amount-badge text-purple" id="lcl-p2-amount">0,00 €</div>
+              </div>
+
+              <div class="package-summary-highlight">
+                <div class="ps-header">
+                  <strong>Synthèse du Gros Package LCL :</strong>
+                  <span class="badge-tag lcl-tag" id="lcl-pack-count-tag">5 postes fixes</span>
+                </div>
+                <div class="ps-grid mt-2">
+                  <div class="ps-item">
+                    <span>Crédit + Assurances :</span>
+                    <strong id="ps-credit-val">1 222,00 €</strong>
+                  </div>
+                  <div class="ps-item">
+                    <span>Taxe Foncière :</span>
+                    <strong id="ps-taxe-val">110,00 €</strong>
+                  </div>
+                  <div class="ps-item">
+                    <span>Prévoyance Travaux :</span>
+                    <strong id="ps-maint-val">50,00 €</strong>
+                  </div>
+                  <div class="ps-item highlight-cyan">
+                    <span>Total Package LCL :</span>
+                    <strong id="ps-total-val">1 382,00 €</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- LCL Visual Category Chart -->
+              <div class="chart-box mt-4">
+                <h4 class="chart-box-title">Poids de chaque poste dans le LCL</h4>
+                <div class="progress-bar-stack" id="lcl-progress-stack">
+                  <!-- Generated by JS -->
+                </div>
+                <div class="stack-legend" id="lcl-stack-legend">
+                  <!-- Legend items -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 4: COMPTE REVOLUT (VIE COURANTE) ================= -->
+      <section class="tab-pane" id="pane-revolut">
+        <div class="section-banner revolut-banner">
+          <div class="banner-icon">💳</div>
+          <div>
+            <h2 class="banner-title">Compte Commun Revolut • Vie Courante</h2>
+            <p class="banner-desc">Suivi dynamique des dépenses quotidiennes : alimentation commune, fluides, sorties & vie du foyer.</p>
+          </div>
+          <div class="banner-total">
+            <span class="banner-total-label">Budget Alloué / Mois</span>
+            <span class="banner-total-val text-violet" id="rev-banner-total">0,00 €</span>
+            <span class="banner-total-annual" id="rev-banner-spent">Dépensé : 0,00 €</span>
+          </div>
+        </div>
+
+        <div class="grid-2-col">
+          <!-- Revolut Budget Envelopes -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Enveloppes Budgétaires Mensuelles</h3>
+                <p class="card-subtitle">Budgets alloués par catégorie pour faire tourner la maison</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-add-revolut-cat">
+                + Modifier enveloppes
+              </button>
+            </div>
+
+            <div class="envelope-list" id="revolut-envelopes-list">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <!-- Revolut Transactions & Tracker -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Dépenses de Vie Réalisées</h3>
+                <p class="card-subtitle">Saisie et suivi des tickets & sorties du mois</p>
+              </div>
+              <button class="btn btn-primary btn-sm" id="btn-add-revolut-expense">
+                + Nouvelle dépense
+              </button>
+            </div>
+
+            <!-- Filters -->
+            <div class="filter-strip">
+              <select id="filter-rev-cat" class="custom-select">
+                <option value="all">Toutes catégories</option>
+                <option value="Courses & Alimentation">Courses & Alimentation</option>
+                <option value="Charges & Fluides">Charges & Fluides</option>
+                <option value="Sorties & Restos">Sorties & Restos</option>
+                <option value="Maison & Déco">Maison & Déco</option>
+                <option value="Animaux / Divers">Animaux / Divers</option>
+              </select>
+
+              <select id="filter-rev-payer" class="custom-select">
+                <!-- Populated dynamically via profiles -->
+              </select>
+            </div>
+
+            <div class="table-responsive mt-3">
+              <table class="custom-table" id="revolut-expenses-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Titre</th>
+                    <th>Catégorie</th>
+                    <th>Payé avec</th>
+                    <th class="text-right">Montant</th>
+                    <th class="text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="revolut-expenses-tbody">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 5: PROFILES & REPARTITION (GENERIC) ================= -->
+      <section class="tab-pane" id="pane-profiles">
+        <div class="grid-2-col">
+          <!-- Profiles Cards -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Gestion Générique des Profils</h2>
+                <p class="card-subtitle">Personnalisation des membres du foyer (actuellement configuré pour Axel & Ariane)</p>
+              </div>
+            </div>
+
+            <div class="profiles-edit-list" id="profiles-container">
+              <!-- Populated via JS -->
+            </div>
+
+            <div class="split-rule-section mt-4">
+              <h4 class="card-title" style="font-size:0.95rem;">Règle de Répartition des Charges Communes</h4>
+              <p class="card-subtitle">Comment répartir les dépenses hors prêt familial</p>
+
+              <div class="split-rule-options mt-3">
+                <label class="rule-choice-card">
+                  <input type="radio" name="split-rule-mode" value="50" id="rule-50-50" checked>
+                  <div class="rule-box">
+                    <span class="method-radio-custom"></span>
+                    <div>
+                      <strong>Égalité stricte (50% / 50%)</strong>
+                      <p>Chacun prend en charge exactement la moitié des dépenses communes LCL et Revolut.</p>
+                    </div>
+                  </div>
+                </label>
+
+                <label class="rule-choice-card">
+                  <input type="radio" name="split-rule-mode" value="income" id="rule-income">
+                  <div class="rule-box">
+                    <span class="method-radio-custom"></span>
+                    <div>
+                      <strong>Proportionnelle aux Revenus Nets (Équité)</strong>
+                      <p>Répartition calculée automatiquement selon les salaires déclarés ci-dessus.</p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data Management & Backups -->
+          <div class="glass-card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Sauvegarde & Export</h2>
+                <p class="card-subtitle">Toutes vos données restent privées et stockées dans votre navigateur</p>
+              </div>
+            </div>
+
+            <div class="data-management-zone" style="border:none; padding-top:0; margin-top:0;">
+              <p class="data-desc">
+                Vous pouvez exporter l'intégralité de votre configuration (profils Axel & Ariane, simulateur de prêt, package LCL, enveloppes Revolut et historique de dépenses) sous forme de fichier JSON sécurisé.
+              </p>
+              
+              <div class="btn-group-wrap">
+                <button type="button" class="btn btn-secondary" id="btn-export-json">
+                  📥 Télécharger sauvegarde JSON
+                </button>
+                <label class="btn btn-secondary cursor-pointer">
+                  📤 Importer un fichier JSON
+                  <input type="file" id="import-json-file" accept=".json" style="display:none;">
+                </label>
+                <button type="button" class="btn btn-danger" id="btn-reset-all-data">
+                  ⚠️ Réinitialiser aux données par défaut
+                </button>
+              </div>
+            </div>
+
+            <div class="quick-summary-box mt-6">
+              <h4 class="card-title" style="font-size:0.95rem;">À propos du calcul en temps réel</h4>
+              <p class="card-subtitle" style="line-height:1.5;">
+                Tous les curseurs et calculs sont exécutés à 60 FPS en JavaScript pur dans votre navigateur. Dès que vous déplacez un curseur sur le montant ou la date de début, le montant exact dû est recalculé instantanément et répercuté sur la part de chaque profil.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- MODAL: ADD / EDIT EXPENSE -->
+    <div class="modal-backdrop" id="expense-modal" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 class="modal-title" id="expense-modal-title">Ajouter une dépense</h3>
+          <button class="modal-close-btn" id="btn-close-expense-modal">&times;</button>
+        </div>
+        <form id="expense-form">
+          <input type="hidden" id="modal-expense-id">
+          
+          <div class="form-field">
+            <label for="modal-expense-desc">Description / Commerçant</label>
+            <input type="text" id="modal-expense-desc" class="custom-input" placeholder="ex: Courses Carrefour, Castorama..." required>
+          </div>
+
+          <div class="form-group-row">
+            <div class="form-field">
+              <label for="modal-expense-amount">Montant (€)</label>
+              <input type="number" step="0.01" id="modal-expense-amount" class="custom-input" placeholder="0.00" required>
+            </div>
+            <div class="form-field">
+              <label for="modal-expense-date">Date</label>
+              <input type="date" id="modal-expense-date" class="custom-input" required>
+            </div>
+          </div>
+
+          <div class="form-group-row">
+            <div class="form-field">
+              <label for="modal-expense-account">Compte concerné</label>
+              <select id="modal-expense-account" class="custom-select">
+                <option value="Revolut">Compte Revolut (Vie courante)</option>
+                <option value="LCL">Compte LCL (Maison statique)</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="modal-expense-cat">Catégorie</label>
+              <select id="modal-expense-cat" class="custom-select">
+                <option value="Courses & Alimentation">Courses & Alimentation</option>
+                <option value="Charges & Fluides">Charges & Fluides</option>
+                <option value="Sorties & Restos">Sorties & Restos</option>
+                <option value="Maison & Déco">Maison & Déco</option>
+                <option value="Prêt & Patrimoine">Prêt & Patrimoine</option>
+                <option value="Animaux / Divers">Animaux / Divers</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="modal-expense-payer">Payé par</label>
+            <select id="modal-expense-payer" class="custom-select">
+              <!-- Populated dynamically via profiles -->
+            </select>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" id="btn-cancel-modal">Annuler</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-expense">Enregistrer la dépense</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: ADD / EDIT LCL STATIC CHARGE -->
+    <div class="modal-backdrop" id="lcl-item-modal" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 class="modal-title" id="lcl-item-modal-title">Modifier / Ajouter une charge LCL</h3>
+          <button class="modal-close-btn" id="btn-close-lcl-modal">&times;</button>
+        </div>
+        <form id="lcl-item-form">
+          <input type="hidden" id="modal-lcl-id">
+          
+          <div class="form-field">
+            <label for="modal-lcl-label">Intitulé du poste</label>
+            <input type="text" id="modal-lcl-label" class="custom-input" placeholder="ex: Assurance Emprunteur LCL..." required>
+          </div>
+
+          <div class="form-group-row">
+            <div class="form-field">
+              <label for="modal-lcl-amount">Montant Mensuel (€)</label>
+              <input type="number" step="0.01" id="modal-lcl-amount" class="custom-input" placeholder="0.00" required>
+            </div>
+            <div class="form-field">
+              <label for="modal-lcl-category">Package d'appartenance</label>
+              <select id="modal-lcl-category" class="custom-select">
+                <option value="credit">Package Crédit Immobilier & Assurances</option>
+                <option value="taxe">Fiscalité Logement (Taxe Foncière)</option>
+                <option value="maintenance">Prévoyance & Entretien Logement</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="modal-lcl-notes">Notes / Détail contrat</label>
+            <input type="text" id="modal-lcl-notes" class="custom-input" placeholder="ex: Prélèvement le 5 du mois">
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" id="btn-cancel-lcl-modal">Annuler</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-lcl-item">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

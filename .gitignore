@@ -1,0 +1,7 @@
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+*.log
+.system_generated/
+out.html
+test_*.html
