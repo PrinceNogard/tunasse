@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DuoBudget • Suite de Tests Automatisée</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card-bg: rgba(26, 34, 52, 0.7);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --emerald: #10b981;
+      --cyan: #0ea5e9;
+      --rose: #f43f5e;
+      --violet: #8b5cf6;
+      --amber: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      padding: 32px 20px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .btn {
+      padding: 8px 16px;
+      background: rgba(14, 165, 233, 0.15);
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      color: #38bdf8;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover {
+      background: rgba(14, 165, 233, 0.25);
+    }
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      backdrop-filter: blur(12px);
+    }
+    .kpi-label { font-size: 0.8rem; color: var(--text-dim); }
+    .kpi-value { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 700; margin-top: 4px; }
+    .suite-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+    .suite-header {
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+    }
+    .test-list { list-style: none; }
+    .test-item {
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.9rem;
+    }
+    .test-item:last-child { border-bottom: none; }
+    .test-name { display: flex; align-items: center; gap: 8px; }
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-pass { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
+    .badge-fail { background: rgba(244, 63, 94, 0.15); color: var(--rose); }
+    .test-dur { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-dim); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>🧪 DuoBudget • Test Runner Visuel</h1>
+        <p style="color:var(--text-dim); font-size:0.88rem; margin-top:4px;">Exécution automatisée de la suite complète de tests unitaires</p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <a href="../index.html" class="btn">← Retour à DuoBudget</a>
+        <button id="btn-rerun" class="btn">🔄 Relancer les tests</button>
+      </div>
+    </header>
+
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Statut Global</div>
+        <div class="kpi-value" id="kpi-status" style="color:var(--emerald);">EN COURS...</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Tests Réussis</div>
+        <div class="kpi-value font-mono" id="kpi-passed" style="color:var(--emerald);">0 / 0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Tests Échoués</div>
+        <div class="kpi-value font-mono" id="kpi-failed" style="color:var(--rose);">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Temps d'exécution</div>
+        <div class="kpi-value font-mono" id="kpi-duration" style="color:var(--cyan);">0 ms</div>
+      </div>
+    </div>
+
+    <div id="suites-container"></div>
+  </div>
+
+  <script type="module">
+    import { formatCurrency, formatDateFR, computeMonthsElapsedFromStart, computeEndDate, computeRemainingTimeText } from '../js/utils.js';
+    import { computeMonthlyAnnuity, calculateLoanMetrics, calculateLclSubtotals, calculateBudgets, calculateTravauxMetrics } from '../js/finance.js';
+    import { DEFAULT_STATE, validateAndMigrateState } from '../js/state.js';
+    import { getLotStatusConfig, getLotProgressBarConfig, generateTravauxCsvContent } from '../js/travaux-ui.js';
+
+    async function runAllTests() {
+      const container = document.getElementById('suites-container');
+      container.innerHTML = '';
+      const t0 = performance.now();
+
+      let totalTests = 0;
+      let passedTests = 0;
+      let failedTests = 0;
+
+      const suites = [
+        {
+          name: '1. Utilitaires & Formatage (utils.js)',
+          tests: [
+            {
+              name: 'formatCurrency() : formate 50 000 € avec séparateur de milliers',
+              fn: () => /50\s?000,00/.test(formatCurrency(50000))
+            },
+            {
+              name: 'formatCurrency() : gère 13 114,85 € (dépenses travaux)',
+              fn: () => /13\s?114,85/.test(formatCurrency(13114.85))
+            },
+            {
+              name: 'formatDateFR() : convertit 2026-10-15 en 15/10/2026',
+              fn: () => formatDateFR('2026-10-15') === '15/10/2026'
+            },
+            {
+              name: 'computeMonthsElapsedFromStart() : calcule les mois écoulés (Mars -> Oct = 7)',
+              fn: () => computeMonthsElapsedFromStart('2026-03', new Date(2026, 9, 16)) === 7
+            },
+            {
+              name: 'computeEndDate() : calcule le terme sur 180 mois (Mars 2026 -> Mars 2041)',
+              fn: () => computeEndDate('2026-03', 180) === 'Mars 2041'
+            },
+            {
+              name: 'computeRemainingTimeText() : affiche le solde restant en années/mois',
+              fn: () => computeRemainingTimeText(172).includes('14 ans et 4 mois')
+            }
+          ]
+        },
+        {
+          name: '2. Moteurs Financiers & Calculs (finance.js)',
+          tests: [
+            {
+              name: 'computeMonthlyAnnuity() : calcule la mensualité à 0% (12 500 € / 180 m = 69,44 €)',
+              fn: () => computeMonthlyAnnuity(12500, 0, 180).toFixed(2) === '69.44'
+            },
+            {
+              name: 'calculateLoanMetrics() : génère le plan de remboursement d\'Axel à Ariane',
+              fn: () => {
+                const m = calculateLoanMetrics(DEFAULT_STATE.simulator);
+                return m.borrowedAmount === 12500 && m.totalMonths === 180 && m.monthsPaid === 8;
+              }
+            },
+            {
+              name: 'calculateLclSubtotals() : calcule les packages LCL (1 382,00 €/mois)',
+              fn: () => calculateLclSubtotals(DEFAULT_STATE.lclItems).lclTotal === 1382
+            },
+            {
+              name: 'calculateBudgets() : total budget ménage mensuel = 2 537,00 €',
+              fn: () => calculateBudgets(DEFAULT_STATE).globalMonthlyBudget === 2537
+            },
+            {
+              name: 'calculateTravauxMetrics() : Enveloppe initiale = 50 000,00 €',
+              fn: () => calculateTravauxMetrics(DEFAULT_STATE.travauxFund).initialBudget === 50000
+            },
+            {
+              name: 'calculateTravauxMetrics() : Total consommé noté = 13 114,85 €',
+              fn: () => calculateTravauxMetrics(DEFAULT_STATE.travauxFund).totalConsumed === 13114.85
+            },
+            {
+              name: 'calculateTravauxMetrics() : Solde restant travaux = 36 885,15 €',
+              fn: () => calculateTravauxMetrics(DEFAULT_STATE.travauxFund).remainingBudget === 36885.15
+            },
+            {
+              name: 'calculateTravauxMetrics() : Avances Axel = 5 302,00 € vs Ariane = 7 812,85 €',
+              fn: () => {
+                const trv = calculateTravauxMetrics(DEFAULT_STATE.travauxFund);
+                return trv.totalAxel === 5302 && trv.totalAriane === 7812.85;
+              }
+            },
+            {
+              name: 'calculateTravauxMetrics() : Nivellement 50/50 = Axel doit virer 1 255,43 € à Ariane',
+              fn: () => calculateTravauxMetrics(DEFAULT_STATE.travauxFund).axelOwesAriane50 === 1255.43
+            }
+          ]
+        },
+        {
+          name: '3. Gestion d\'État & Migrations (state.js)',
+          tests: [
+            {
+              name: 'DEFAULT_STATE : comporte 2 profils, 7 lots travaux et 4 factures notées',
+              fn: () => DEFAULT_STATE.profiles.length === 2 && DEFAULT_STATE.travauxFund.lots.length === 7 && DEFAULT_STATE.travauxFund.items.length === 4
+            },
+            {
+              name: 'validateAndMigrateState() : reconstitue l\'état en cas de JSON vide ou invalide',
+              fn: () => validateAndMigrateState(null).travauxFund.initialBudget === 50000
+            },
+            {
+              name: 'validateAndMigrateState() : migre automatiquement les 7 lots si absents du stockage',
+              fn: () => validateAndMigrateState({ travauxFund: { items: [{ reason: 'test' }] } }).travauxFund.lots.length === 7
+            }
+          ]
+        },
+        {
+          name: '4. Présentation & Export CSV (travaux-ui.js)',
+          tests: [
+            {
+              name: 'getLotStatusConfig() : associe correctement les libellés et classes CSS',
+              fn: () => getLotStatusConfig('ongoing').label === 'En cours' && getLotStatusConfig('completed').label === 'Clôturé'
+            },
+            {
+              name: 'getLotProgressBarConfig() : applique la couleur émeraude (<80%) et rose en dépassement',
+              fn: () => getLotProgressBarConfig(30, false).barColor === '#10b981' && getLotProgressBarConfig(110, true).barColor === '#f43f5e'
+            },
+            {
+              name: 'generateTravauxCsvContent() : exporte le CSV avec BOM UTF-8 et totaux exacts',
+              fn: () => {
+                const m = calculateTravauxMetrics(DEFAULT_STATE.travauxFund);
+                const csv = generateTravauxCsvContent(m);
+                return csv.startsWith('\uFEFF') && csv.includes('50000,00') && csv.includes('13114,85') && csv.includes('36885,15');
+              }
+            }
+          ]
+        }
+      ];
+
+      for (const suite of suites) {
+        const suiteEl = document.createElement('div');
+        suiteEl.className = 'suite-card';
+        let suiteHtml = `
+          <div class="suite-header">
+            <span>${suite.name}</span>
+            <span class="badge badge-pass" id="badge-${suite.name.slice(0, 2)}">En cours</span>
+          </div>
+          <ul class="test-list">
+        `;
+
+        let suiteFailed = 0;
+        for (const t of suite.tests) {
+          totalTests++;
+          const tStart = performance.now();
+          let pass = false;
+          try {
+            pass = t.fn() === true;
+          } catch (e) {
+            console.error('Test error:', e);
+            pass = false;
+          }
+          const tDur = (performance.now() - tStart).toFixed(2);
+
+          if (pass) {
+            passedTests++;
+          } else {
+            failedTests++;
+            suiteFailed++;
+          }
+
+          suiteHtml += `
+            <li class="test-item">
+              <span class="test-name">
+                <span>${pass ? '✅' : '❌'}</span>
+                <span>${t.name}</span>
+              </span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="test-dur">${tDur} ms</span>
+                <span class="badge ${pass ? 'badge-pass' : 'badge-fail'}">${pass ? 'PASS' : 'FAIL'}</span>
+              </div>
+            </li>
+          `;
+        }
+
+        suiteHtml += `</ul>`;
+        suiteEl.innerHTML = suiteHtml;
+        container.appendChild(suiteEl);
+
+        const badge = suiteEl.querySelector('.suite-header .badge');
+        if (badge) {
+          badge.textContent = suiteFailed === 0 ? '100% PASS' : `${suiteFailed} ÉCHECS`;
+          badge.className = `badge ${suiteFailed === 0 ? 'badge-pass' : 'badge-fail'}`;
+        }
+      }
+
+      const totalDur = (performance.now() - t0).toFixed(1);
+      document.getElementById('kpi-duration').textContent = `${totalDur} ms`;
+      document.getElementById('kpi-passed').textContent = `${passedTests} / ${totalTests}`;
+      document.getElementById('kpi-failed').textContent = `${failedTests}`;
+      const statusEl = document.getElementById('kpi-status');
+      if (failedTests === 0) {
+        statusEl.textContent = '100% SUCCÈS';
+        statusEl.style.color = 'var(--emerald)';
+      } else {
+        statusEl.textContent = `${failedTests} ÉCHECS`;
+        statusEl.style.color = 'var(--rose)';
+      }
+    }
+
+    document.getElementById('btn-rerun').addEventListener('click', runAllTests);
+    runAllTests();
+  </script>
+</body>
+</html>

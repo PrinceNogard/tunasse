@@ -1,0 +1,22 @@
+{
+  "name": "tunasse-duobudget",
+  "version": "1.1.0",
+  "description": "Gestion de budget de couple, simulateur de prêt dynamique et suivi d'enveloppe travaux 50k",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/**/*.test.js",
+    "test:watch": "node --test --watch tests/**/*.test.js",
+    "complexity": "node scripts/analyze_complexity.js"
+  },
+  "keywords": [
+    "budget",
+    "couple",
+    "loan",
+    "simulator",
+    "travaux",
+    "finances"
+  ],
+  "author": "Axel & Ariane",
+  "license": "MIT"
+}

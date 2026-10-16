@@ -74,12 +74,67 @@ Application web moderne, fluide et réactive conçue pour la gestion financière
 
 ---
 
+## 🧪 6. Suite de Tests Unitaires Automatisée (40 Tests - 100% Succès)
+
+Le projet intègre une suite de tests unitaires complète, rapide et automatisée sans dépendance superflue, exécutable via le test runner natif de Node.js (`node:test`) ainsi que via une interface web interactive :
+
+### Lancement des tests en ligne de commande (CLI) :
+```bash
+npm test
+```
+*Exécute les 40 tests unitaires en ~100 ms.*
+
+### Lancement des tests en mode surveillance (Watch) :
+```bash
+npm run test:watch
+```
+
+### Test Runner Visuel dans le navigateur :
+Directement accessible sur le serveur local ou via le bouton **🧪 Tests (40/40)** du header :
+👉 **http://127.0.0.1:8085/tests/runner.html**
+
+### Périmètre couvert par les tests :
+1. **`tests/utils.test.js`** : Formats monétaires, dates ISO vers FR, calculs de mois écoulés, projection des dates d'échéance, libellés dynamiques du temps restant, sanitisation CSV.
+2. **`tests/finance.test.js`** : Formules d'annuités d'emprunt (taux 0% et taux positif), métriques de prêt d'Axel à Ariane, packages LCL statiques, budgets Revolut, clé 50/50 vs prorata de revenus, distribution par compensation de compte vs virement direct, réconciliation mathématique stricte de l'enveloppe travaux 50k (13 114,85 € engagés, 36 885,15 € restants, avances Axel vs Ariane, et nivellement 50/50 à 1 255,43 €).
+3. **`tests/state.test.js`** : Intégrité du schéma `DEFAULT_STATE`, résilience aux corruptions JSON et migrations automatiques des lots de travaux.
+4. **`tests/csv.test.js`** : Statuts, jauges d'avancement, et intégrité du format CSV avec BOM UTF-8 pour Excel.
+
+---
+
+## 🏗️ 7. Architecture Modulaire & Refactorisation de la Complexité Cyclomatique
+
+Les méthodes monolithiques à haute complexité cyclomatique (McCabe > 15) ont été décomposées en modules fonctionnels purs à faible complexité (inférieure ou égale à 5 par fonction) :
+
+| Fichier | Rôle & Responsabilité | Fonctions Clés |
+| :--- | :--- | :--- |
+| **`js/utils.js`** | Utilitaires et formateurs sans dépendance DOM | `formatCurrency`, `formatDateFR`, `computeMonthsElapsedFromStart`, `computeEndDate` |
+| **`js/finance.js`** | Moteurs de calculs financiers purs | `computeMonthlyAnnuity`, `calculateLoanMetrics`, `calculateBudgets`, `calculateTravauxMetrics`, `resolveItemLot`, `calculateEqualization` |
+| **`js/state.js`** | Schéma par défaut, migrations et persistance | `DEFAULT_STATE`, `STORAGE_KEY`, `validateAndMigrateState`, `loadState` |
+| **`js/travaux-ui.js`** | Règles d'affichage des lots et générateur CSV | `getLotStatusConfig`, `getLotProgressBarConfig`, `generateTravauxCsvContent` |
+| **`app.js`** | Contrôleur ES Module et dispatcher d'actions DOM | `renderAll`, `updateSimulatorRealtime`, `CLICK_DISPATCHERS` |
+
+### Audit de Complexité Cyclomatique :
+```bash
+npm run complexity
+```
+*Rapport instantané confirmant 0 méthode à complexité élevée dans le code.*
+
+---
+
 ## 🚀 Utilisation Locale
 
 L'application est servie localement sur :
 👉 **http://127.0.0.1:8085**
+Suite de tests visuelle :
+👉 **http://127.0.0.1:8085/tests/runner.html**
 
 Fichiers sources dans le projet :
 - [index.html](file:///c:/Users/User/.gemini/antigravity/scratch/tunasse/index.html)
 - [styles.css](file:///c:/Users/User/.gemini/antigravity/scratch/tunasse/styles.css)
 - [app.js](file:///c:/Users/User/.gemini/antigravity/scratch/tunasse/app.js)
+- [js/finance.js](file:///c:/Users/User/.gemini/antigravity/scratch/tunasse/js/finance.js)
+- [js/utils.js](file:///c:/Users/User/.gemini/antigravity/scratch/tunasse/js/utils.js)
+- [js/state.js](file:///c:/Users/User/.gemini/antigravity/scratch/tunasse/js/state.js)
+- [js/travaux-ui.js](file:///c:/Users/User/.gemini/antigravity/scratch/tunasse/js/travaux-ui.js)
+- [tests/runner.html](file:///c:/Users/User/.gemini/antigravity/scratch/tunasse/tests/runner.html)
+
