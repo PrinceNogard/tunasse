@@ -139,9 +139,9 @@ $splitMode = $state['splitRule']['mode'] ?? '50';
             </div>
 
             <div class="quick-summary-box mt-6">
-              <h4 class="card-title" style="font-size:0.95rem;">Architecture Full PHP 8.3 & Reactivité Hybride</h4>
+              <h4 class="card-title" style="font-size:0.95rem;">Architecture Full PHP 8.4 & Reactivité Hybride</h4>
               <p class="card-subtitle" style="line-height:1.5;">
-                Toutes les vues sont rendues côté serveur par <strong>PHP 8.3</strong> en amont pour un affichage immédiat sans saut d'interface. En parallèle, les interactions en direct (déplacement des curseurs, ajout de dépenses, filtres) sont calculées instantanément dans le navigateur et synchronisées via l'API REST PHP (<code>api.php</code>).
+                Toutes les vues sont rendues côté serveur par <strong>PHP 8.4</strong> en amont pour un affichage immédiat sans saut d'interface. En parallèle, les interactions en direct (déplacement des curseurs, ajout de dépenses, filtres) sont calculées instantanément dans le navigateur et synchronisées via l'API REST PHP (<code>api.php</code>).
               </p>
             </div>
           </div>

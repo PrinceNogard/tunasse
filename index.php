@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * DuoBudget • Entry Point (PHP 8.3 Native MVC Controller)
+ * DuoBudget • Entry Point (PHP 8.4 Native MVC Controller)
  * 
  * Server-side renders the full financial management application, pre-computes
  * all financial algorithms, and hydrates the client with atomic persistent state.

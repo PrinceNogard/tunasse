@@ -9,7 +9,7 @@
 - **Tests obligatoires** : Exécuter `php tests/run_php_tests.php` avant tout commit pour garantir un statut 100% vert (40/40 tests).
 
 ## 2. Standards Techniques du Projet
-- **Stack** : PHP 8.3 natif (MVC avec rendu serveur dans `templates/`, logique métier dans `src/`, persistance dans `data/app_state.json` et API REST dans `api.php`).
+- **Stack** : PHP 8.4 natif (MVC avec rendu serveur dans `templates/`, logique métier dans `src/`, persistance dans `data/app_state.json` et API REST dans `api.php`).
 - **Design & Esthétique** : Interface sobre, élégante, matte dark slate (`#0a0d14`), bordures subtiles (`#1e293b`), aucune couleur criarde ni néon.
 - **Enveloppe Travaux** : Respecter l'équilibre financier de base de 50 000,00 €, le suivi des lots et le solde exact des avances personnelles d'Axel et Ariane.
 
