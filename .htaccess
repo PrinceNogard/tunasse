@@ -1,0 +1,2 @@
+# Prioritize PHP Native MVC Controller over static HTML
+DirectoryIndex index.php index.html
