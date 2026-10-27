@@ -10,7 +10,7 @@
 
 ## 2. Standards Techniques du Projet
 - **Stack** : PHP 8.4 natif (MVC avec rendu serveur dans `templates/`, logique métier dans `src/`, persistance dans `data/app_state.json` et API REST dans `api.php`).
-- **Design & Esthétique** : Interface sobre, élégante, matte dark slate (`#0a0d14`), bordures subtiles (`#1e293b`), aucune couleur criarde ni néon.
+- **Isolation des Données d'Environnement** : Le fichier `data/app_state.json` est strictement propre à son environnement hôte et **ne doit jamais être versionné dans Git** (seul le modèle neutre `data/app_state.json.dist` est tracé). Les données du serveur distant font foi et ne doivent en aucun cas être altérées par un push de développement local.
 - **Enveloppe Travaux** : Respecter l'équilibre financier de base de 50 000,00 €, le suivi des lots et le solde exact des avances personnelles d'Axel et Ariane.
 
 ## 3. Vélocité & Diffs Chirurgicaux (Règle d'Or)
