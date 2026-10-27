@@ -366,6 +366,12 @@ export function calculateTravauxMetrics(fund = {}, profiles = [], splitRule = '5
   }
 
   const { lotStats, totalAllocated } = calculateLotStatistics(rawLots, items);
+  for (const l of lotStats) {
+    l.envelopePct = initialBudget > 0 ? Number(((l.allocatedBudget / initialBudget) * 100).toFixed(1)) : 0;
+    l.spentEnvelopePct = initialBudget > 0 ? Number(((l.totalSpent / initialBudget) * 100).toFixed(1)) : 0;
+    l.remainingEnvelopePct = initialBudget > 0 ? Number(((l.remaining / initialBudget) * 100).toFixed(1)) : 0;
+  }
+
   const totalConsumed = totalAxel + totalAriane;
   const remainingBudget = initialBudget - totalConsumed;
   const unallocatedBudget = Number((initialBudget - totalAllocated).toFixed(2));
@@ -374,6 +380,13 @@ export function calculateTravauxMetrics(fund = {}, profiles = [], splitRule = '5
   const lotsPercentageRemaining = Math.max(0, 100 - lotsPercentageConsumed);
   const percentageConsumed = initialBudget > 0 ? (totalConsumed / initialBudget) * 100 : 0;
   const percentageRemaining = Math.max(0, 100 - percentageConsumed);
+
+  const pendingPlannedBudget = Math.max(0, Number((totalAllocated - totalConsumed).toFixed(2)));
+  const pendingPlannedPct = initialBudget > 0 ? Number(((pendingPlannedBudget / initialBudget) * 100).toFixed(1)) : 0;
+  const marginBudget = Math.max(0, Number((initialBudget - totalAllocated).toFixed(2)));
+  const marginPct = initialBudget > 0 ? Number(((marginBudget / initialBudget) * 100).toFixed(1)) : 0;
+  const isOverAllocated = totalAllocated > initialBudget;
+  const overAllocatedAmount = isOverAllocated ? Number((totalAllocated - initialBudget).toFixed(2)) : 0;
 
   const axelShareOfConsumed = totalConsumed > 0 ? (totalAxel / totalConsumed) * 100 : 50;
   const arianeShareOfConsumed = totalConsumed > 0 ? (totalAriane / totalConsumed) * 100 : 50;
@@ -393,6 +406,12 @@ export function calculateTravauxMetrics(fund = {}, profiles = [], splitRule = '5
     lotsRemaining,
     lotsPercentageConsumed,
     lotsPercentageRemaining,
+    pendingPlannedBudget,
+    pendingPlannedPct,
+    marginBudget,
+    marginPct,
+    isOverAllocated,
+    overAllocatedAmount,
     totalAxel,
     totalAriane,
     totalConsumed,

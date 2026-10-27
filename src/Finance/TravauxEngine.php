@@ -184,10 +184,25 @@ class TravauxEngine
             ? sprintf('Axel doit virer %.2f € à Ariane pour atteindre une égalité parfaite (%.2f € chacun).', $eq['axelOwesAriane50'], $eq['target50Share'])
             : sprintf('Ariane doit virer %.2f € à Axel pour atteindre une égalité parfaite (%.2f € chacun).', abs($eq['axelOwesAriane50']), $eq['target50Share']);
 
+        $lotStats = $lotResult['lotStats'];
+        foreach ($lotStats as &$l) {
+            $l['envelopePct'] = $initialBudget > 0.0 ? round(($l['allocatedBudget'] / $initialBudget) * 100.0, 1) : 0.0;
+            $l['spentEnvelopePct'] = $initialBudget > 0.0 ? round(($l['totalSpent'] / $initialBudget) * 100.0, 1) : 0.0;
+            $l['remainingEnvelopePct'] = $initialBudget > 0.0 ? round(($l['remaining'] / $initialBudget) * 100.0, 1) : 0.0;
+        }
+        unset($l);
+
+        $pendingPlannedBudget = max(0.0, round($lotResult['totalAllocated'] - $totalConsumed, 2));
+        $pendingPlannedPct = $initialBudget > 0.0 ? round(($pendingPlannedBudget / $initialBudget) * 100.0, 1) : 0.0;
+        $marginBudget = max(0.0, round($initialBudget - $lotResult['totalAllocated'], 2));
+        $marginPct = $initialBudget > 0.0 ? round(($marginBudget / $initialBudget) * 100.0, 1) : 0.0;
+        $isOverAllocated = $lotResult['totalAllocated'] > $initialBudget;
+        $overAllocatedAmount = $isOverAllocated ? round($lotResult['totalAllocated'] - $initialBudget, 2) : 0.0;
+
         return array_merge([
             'initialBudget' => $initialBudget,
             'totalBudget' => $initialBudget,
-            'lots' => $lotResult['lotStats'],
+            'lots' => $lotStats,
             'items' => $items,
             'totalAllocatedLots' => $lotResult['totalAllocated'],
             'unallocatedBudget' => round($initialBudget - $lotResult['totalAllocated'], 2),
@@ -195,6 +210,12 @@ class TravauxEngine
             'lotsPercentageConsumed' => $lotResult['totalAllocated'] > 0.0 ? round(($totalConsumed / $lotResult['totalAllocated']) * 100.0, 2) : 0.0,
             'lotsSpentPct' => $lotResult['totalAllocated'] > 0.0 ? round(($totalConsumed / $lotResult['totalAllocated']) * 100.0, 1) : 0.0,
             'lotsRemainingPct' => max(0.0, round(100.0 - ($lotResult['totalAllocated'] > 0.0 ? ($totalConsumed / $lotResult['totalAllocated']) * 100.0 : 0.0), 1)),
+            'pendingPlannedBudget' => $pendingPlannedBudget,
+            'pendingPlannedPct' => $pendingPlannedPct,
+            'marginBudget' => $marginBudget,
+            'marginPct' => $marginPct,
+            'isOverAllocated' => $isOverAllocated,
+            'overAllocatedAmount' => $overAllocatedAmount,
             'totalAxel' => $totalAxel,
             'totalAriane' => $totalAriane,
             'totalConsumed' => $totalConsumed,
