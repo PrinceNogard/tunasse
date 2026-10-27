@@ -469,6 +469,7 @@ function updateLotsTableFooter(m) {
   const rem = m.lotsRemaining != null ? m.lotsRemaining : m.remainingBudget;
   const pct = m.lotsSpentPct != null ? m.lotsSpentPct : (m.lotsPercentageConsumed != null ? m.lotsPercentageConsumed : m.percentageConsumed);
 
+  // 1. Cumul Estimé / Chiffré des lots chantiers
   setEl('tfoot-lots-budget', formatCurrency(totalAlloc));
   setEl('tfoot-lots-spent', formatCurrency(m.totalConsumed));
   setEl('tfoot-lots-axel', formatCurrency(m.totalAxel));
@@ -487,20 +488,68 @@ function updateLotsTableFooter(m) {
 
   const statusBadge = document.getElementById('tfoot-lots-status-badge');
   if (statusBadge) {
-    if (m.isOverAllocated) {
-      statusBadge.textContent = `Dépassement (+${formatCurrency(m.overAllocatedAmount)})`;
+    if (rem < 0) {
+      statusBadge.textContent = `Dépassement lots (+${formatCurrency(Math.abs(rem))})`;
       statusBadge.style.background = 'rgba(244,63,94,0.15)';
       statusBadge.style.color = '#f43f5e';
-    } else if (m.unallocatedBudget > 0) {
-      statusBadge.textContent = `Réserve ${formatCurrency(m.unallocatedBudget)}`;
+    } else {
+      statusBadge.textContent = 'Lots chiffrés';
       statusBadge.style.background = 'rgba(56,189,248,0.15)';
       statusBadge.style.color = '#38bdf8';
-    } else {
-      statusBadge.textContent = 'Équilibré (50k)';
-      statusBadge.style.background = 'rgba(16,185,129,0.15)';
-      statusBadge.style.color = '#34d399';
     }
   }
+
+  // 2. Réserve / Disponible non chiffré sur l'enveloppe
+  const unalloc = m.unallocatedBudget != null ? m.unallocatedBudget : (m.initialBudget - totalAlloc);
+  const isUnallocNeg = unalloc < 0;
+  const reserveEl = document.getElementById('tfoot-reserve-budget');
+  if (reserveEl) {
+    reserveEl.textContent = `${isUnallocNeg ? '-' : '+'}${formatCurrency(Math.abs(unalloc))}`;
+    reserveEl.className = `text-right font-mono ${isUnallocNeg ? 'text-rose' : 'text-emerald'}`;
+  }
+  const reserveRemEl = document.getElementById('tfoot-reserve-remaining');
+  if (reserveRemEl) {
+    reserveRemEl.textContent = `${isUnallocNeg ? '-' : '+'}${formatCurrency(Math.abs(unalloc))}`;
+    reserveRemEl.className = `text-right font-mono ${isUnallocNeg ? 'text-rose' : 'text-emerald'}`;
+  }
+  const marginPct = m.marginPct != null ? m.marginPct : (m.initialBudget > 0 ? (unalloc / m.initialBudget) * 100 : 0);
+  setEl('tfoot-reserve-pct', `${marginPct.toFixed(1)}% de l'enveloppe`);
+
+  const reserveBadge = document.getElementById('tfoot-reserve-badge');
+  if (reserveBadge) {
+    if (unalloc > 0) {
+      reserveBadge.textContent = 'Réserve libre';
+      reserveBadge.style.background = 'rgba(16,185,129,0.12)';
+      reserveBadge.style.color = '#34d399';
+    } else if (unalloc < 0) {
+      reserveBadge.textContent = `Dépassement (-${formatCurrency(Math.abs(unalloc))})`;
+      reserveBadge.style.background = 'rgba(244,63,94,0.15)';
+      reserveBadge.style.color = '#f43f5e';
+    } else {
+      reserveBadge.textContent = '100% alloué';
+      reserveBadge.style.background = 'rgba(56,189,248,0.15)';
+      reserveBadge.style.color = '#38bdf8';
+    }
+  }
+
+  // 3. Enveloppe Globale de Financement (Budget Réel Total)
+  setEl('tfoot-global-budget', formatCurrency(m.initialBudget));
+  setEl('tfoot-global-spent', formatCurrency(m.totalConsumed));
+  setEl('tfoot-global-axel', formatCurrency(m.totalAxel));
+  setEl('tfoot-global-ariane', formatCurrency(m.totalAriane));
+
+  const globRem = m.remainingBudget;
+  const isGlobNeg = globRem < 0;
+  const globRemEl = document.getElementById('tfoot-global-remaining');
+  if (globRemEl) {
+    globRemEl.textContent = `${isGlobNeg ? '-' : '+'}${formatCurrency(Math.abs(globRem))}`;
+    globRemEl.className = `text-right font-mono ${isGlobNeg ? 'text-rose' : 'text-emerald'}`;
+  }
+
+  const globPct = m.percentageConsumed != null ? m.percentageConsumed : (m.initialBudget > 0 ? (m.totalConsumed / m.initialBudget) * 100 : 0);
+  const globFill = document.getElementById('tfoot-global-progress-fill');
+  if (globFill) globFill.style.width = `${Math.min(100, globPct).toFixed(2)}%`;
+  setEl('tfoot-global-progress-pct', `${globPct.toFixed(1)}%`);
 }
 
 function renderTravauxLotsTable(m) {

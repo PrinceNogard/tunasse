@@ -261,7 +261,7 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
                 <tr>
                   <th>Lot / Chantier</th>
                   <th class="text-center">Statut</th>
-                  <th class="text-right">Budget de Base</th>
+                  <th class="text-right">Budget Estimé / Chiffré</th>
                   <th class="text-right">Dépensé Réel</th>
                   <th class="text-right">Avance <?= htmlspecialchars($p1['name']) ?></th>
                   <th class="text-right">Avance <?= htmlspecialchars($p2['name']) ?></th>
@@ -315,23 +315,82 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
                 <?php endforeach; ?>
               </tbody>
               <tfoot id="travaux-lots-tfoot" class="travaux-lots-tfoot">
-                <tr class="tfoot-lots-total">
+                <!-- 1. Cumul chiffré des lots chantiers -->
+                <tr class="tfoot-row-chiffre" id="tfoot-row-chiffre">
                   <td colspan="2">
-                    <strong>TOTAL DU BUDGET TRAVAUX</strong>
+                    <div style="display:flex; flex-direction:column;">
+                      <strong style="color:var(--text-main); font-size:0.88rem;">📐 TOTAL ESTIMÉ / CHIFFRÉ DES LOTS</strong>
+                      <small style="color:var(--text-dim); font-size:0.73rem;">Cumul des devis et prévisions saisis pour les chantiers</small>
+                    </div>
                   </td>
-                  <td class="text-right font-mono" style="font-weight:800;" id="tfoot-lots-budget"><?= Format::currency($travaux['totalAllocatedLots'] ?? $travaux['totalBudget'] ?? 50000) ?></td>
-                  <td class="text-right font-mono text-amber" style="font-weight:800;" id="tfoot-lots-spent"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?></td>
+                  <td class="text-right font-mono text-cyan" style="font-weight:700;" id="tfoot-lots-budget"><?= Format::currency($travaux['totalAllocatedLots'] ?? $travaux['totalBudget'] ?? 50000) ?></td>
+                  <td class="text-right font-mono text-amber" style="font-weight:700;" id="tfoot-lots-spent"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?></td>
                   <td class="text-right font-mono text-cyan" id="tfoot-lots-axel"><?= Format::currency($travaux['totalAxel'] ?? 5302) ?></td>
                   <td class="text-right font-mono text-violet" id="tfoot-lots-ariane"><?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?></td>
-                  <td class="text-right font-mono <?= ($travaux['lotsRemaining'] ?? $travaux['remainingBudget'] ?? 0) >= 0 ? 'text-emerald' : 'text-rose' ?>" style="font-weight:800;" id="tfoot-lots-remaining"><?= (($travaux['lotsRemaining'] ?? $travaux['remainingBudget'] ?? 0) >= 0 ? '+' : '') . Format::currency($travaux['lotsRemaining'] ?? $travaux['remainingBudget'] ?? 36885.15) ?></td>
+                  <td class="text-right font-mono <?= ($travaux['lotsRemaining'] ?? $travaux['remainingBudget'] ?? 0) >= 0 ? 'text-emerald' : 'text-rose' ?>" style="font-weight:700;" id="tfoot-lots-remaining"><?= (($travaux['lotsRemaining'] ?? $travaux['remainingBudget'] ?? 0) >= 0 ? '+' : '') . Format::currency($travaux['lotsRemaining'] ?? $travaux['remainingBudget'] ?? 36885.15) ?></td>
                   <td>
                     <div class="tfoot-progress-wrap">
-                      <div class="tfoot-progress-fill" id="tfoot-lots-progress-fill" style="width: <?= min(100, (float)($travaux['lotsSpentPct'] ?? $travaux['spentPct'] ?? 26.2)) ?>%;"></div>
+                      <div class="tfoot-progress-bar">
+                        <div class="tfoot-progress-fill" id="tfoot-lots-progress-fill" style="width: <?= min(100, (float)($travaux['lotsSpentPct'] ?? $travaux['spentPct'] ?? 26.2)) ?>%;"></div>
+                      </div>
+                      <span class="tfoot-progress-label font-mono" id="tfoot-lots-progress-pct"><?= $travaux['lotsSpentPct'] ?? $travaux['spentPct'] ?? 26.2 ?>%</span>
                     </div>
-                    <span class="tfoot-progress-label font-mono" id="tfoot-lots-progress-pct"><?= $travaux['lotsSpentPct'] ?? $travaux['spentPct'] ?? 26.2 ?>%</span>
                   </td>
                   <td class="text-center" id="tfoot-lots-status-col">
-                    <span class="badge-tag" id="tfoot-lots-status-badge" style="background:rgba(16,185,129,0.15); color:#34d399;">Solde sain</span>
+                    <span class="badge-tag" id="tfoot-lots-status-badge" style="background:rgba(56,189,248,0.15); color:#38bdf8;">Chiffré</span>
+                  </td>
+                </tr>
+
+                <!-- 2. Réserve / Marge libre non engagée sur l'enveloppe -->
+                <tr class="tfoot-row-reserve" id="tfoot-row-reserve">
+                  <td colspan="2">
+                    <div style="display:flex; flex-direction:column;">
+                      <strong style="color:var(--text-muted); font-size:0.84rem;">🛡️ RÉSERVE / DISPONIBLE NON CHIFFRÉ</strong>
+                      <small style="color:var(--text-dim); font-size:0.72rem;">Marge libre restante non encore allouée aux chantiers</small>
+                    </div>
+                  </td>
+                  <td class="text-right font-mono <?= ($travaux['unallocatedBudget'] ?? 0) >= 0 ? 'text-emerald' : 'text-rose' ?>" style="font-weight:600;" id="tfoot-reserve-budget">
+                    <?= (($travaux['unallocatedBudget'] ?? 0) >= 0 ? '+' : '') . Format::currency($travaux['unallocatedBudget'] ?? 0) ?>
+                  </td>
+                  <td class="text-right font-mono text-dim">—</td>
+                  <td class="text-right font-mono text-dim">—</td>
+                  <td class="text-right font-mono text-dim">—</td>
+                  <td class="text-right font-mono <?= ($travaux['unallocatedBudget'] ?? 0) >= 0 ? 'text-emerald' : 'text-rose' ?>" style="font-weight:600;" id="tfoot-reserve-remaining">
+                    <?= (($travaux['unallocatedBudget'] ?? 0) >= 0 ? '+' : '') . Format::currency($travaux['unallocatedBudget'] ?? 0) ?>
+                  </td>
+                  <td class="text-center font-mono text-dim" style="font-size:0.78rem;" id="tfoot-reserve-pct">
+                    <?= ($travaux['marginPct'] ?? 0) ?>% de l'enveloppe
+                  </td>
+                  <td class="text-center">
+                    <span class="badge-tag" id="tfoot-reserve-badge" style="<?= ($travaux['unallocatedBudget'] ?? 0) >= 0 ? 'background:rgba(16,185,129,0.12); color:#34d399;' : 'background:rgba(244,63,94,0.15); color:#f43f5e;' ?>">
+                      <?= ($travaux['unallocatedBudget'] ?? 0) > 0 ? 'Réserve libre' : (($travaux['unallocatedBudget'] ?? 0) < 0 ? 'Dépassement' : '100% alloué') ?>
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- 3. Enveloppe Globale de Financement (Le vrai Budget Total) -->
+                <tr class="tfoot-row-global" id="tfoot-row-global">
+                  <td colspan="2">
+                    <div style="display:flex; flex-direction:column;">
+                      <strong style="color:#ffffff; font-size:0.92rem; letter-spacing:0.2px;">🏦 ENVELOPPE TOTALE FINANCEMENT (Budget Réel)</strong>
+                      <small style="color:var(--text-dim); font-size:0.74rem;">Capacité totale du prêt travaux / fonds dédié maison</small>
+                    </div>
+                  </td>
+                  <td class="text-right font-mono text-cyan" style="font-weight:800; font-size:0.98rem;" id="tfoot-global-budget"><?= Format::currency($travaux['totalBudget'] ?? 50000) ?></td>
+                  <td class="text-right font-mono text-amber" style="font-weight:800; font-size:0.98rem;" id="tfoot-global-spent"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?></td>
+                  <td class="text-right font-mono text-cyan" style="font-weight:700;" id="tfoot-global-axel"><?= Format::currency($travaux['totalAxel'] ?? 5302) ?></td>
+                  <td class="text-right font-mono text-violet" style="font-weight:700;" id="tfoot-global-ariane"><?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?></td>
+                  <td class="text-right font-mono <?= ($travaux['remainingBudget'] ?? 0) >= 0 ? 'text-emerald' : 'text-rose' ?>" style="font-weight:800; font-size:0.98rem;" id="tfoot-global-remaining"><?= (($travaux['remainingBudget'] ?? 0) >= 0 ? '+' : '') . Format::currency($travaux['remainingBudget'] ?? 36885.15) ?></td>
+                  <td>
+                    <div class="tfoot-progress-wrap">
+                      <div class="tfoot-progress-bar">
+                        <div class="tfoot-progress-fill" id="tfoot-global-progress-fill" style="width: <?= min(100, (float)($travaux['spentPct'] ?? 26.2)) ?>%;"></div>
+                      </div>
+                      <span class="tfoot-progress-label font-mono" id="tfoot-global-progress-pct"><?= $travaux['spentPct'] ?? 26.2 ?>%</span>
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge-tag" style="background:rgba(16,185,129,0.2); color:#34d399; font-weight:700;">Enveloppe 50k</span>
                   </td>
                 </tr>
               </tfoot>
