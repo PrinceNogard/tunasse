@@ -123,6 +123,17 @@ MiniAssert::floatNear(36885.15, $travaux['remainingBudget'], 0.01, 'Remaining en
 MiniAssert::floatNear(2510.85, $travaux['advanceDelta'], 0.01, 'Ariane advance delta (+2 510,85 €)');
 MiniAssert::floatNear(6557.43, $travaux['target50Share'], 0.01, '50/50 target per partner');
 MiniAssert::floatNear(1255.43, $travaux['axelOwesAriane50'], 0.01, 'Axel owes Ariane for 50/50 par');
+MiniAssert::floatNear(50000.00, $travaux['totalAllocatedLots'], 0.01, 'Default allocated lots sum 50 000 €');
+MiniAssert::floatNear(0.00, $travaux['unallocatedBudget'], 0.01, 'Default unallocated reserve 0 €');
+MiniAssert::floatNear(36885.15, $travaux['lotsRemaining'], 0.01, 'Default remaining on lots 36 885,15 €');
+
+// Test with partial lot allocation (e.g., lots planned for 45 000 € out of 50 000 €)
+$partialState = $defaultState;
+$partialState['travauxFund']['lots'][6]['allocatedBudget'] = 0.0; // remove 5000 reserve -> 45 000
+$partialTravaux = TravauxEngine::calculate($partialState);
+MiniAssert::floatNear(45000.00, $partialTravaux['totalAllocatedLots'], 0.01, 'Partial allocated lots sum 45 000 €');
+MiniAssert::floatNear(5000.00, $partialTravaux['unallocatedBudget'], 0.01, 'Unallocated envelope reserve 5 000 €');
+MiniAssert::floatNear(31885.15, $partialTravaux['lotsRemaining'], 0.01, 'Remaining on allocated lots 31 885,15 €');
 
 // 5. CSV Export Tests
 echo "\n▶ CSV Export Tests:\n";

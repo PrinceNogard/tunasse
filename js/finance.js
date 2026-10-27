@@ -368,6 +368,10 @@ export function calculateTravauxMetrics(fund = {}, profiles = [], splitRule = '5
   const { lotStats, totalAllocated } = calculateLotStatistics(rawLots, items);
   const totalConsumed = totalAxel + totalAriane;
   const remainingBudget = initialBudget - totalConsumed;
+  const unallocatedBudget = Number((initialBudget - totalAllocated).toFixed(2));
+  const lotsRemaining = Number((totalAllocated - totalConsumed).toFixed(2));
+  const lotsPercentageConsumed = totalAllocated > 0 ? (totalConsumed / totalAllocated) * 100 : 0;
+  const lotsPercentageRemaining = Math.max(0, 100 - lotsPercentageConsumed);
   const percentageConsumed = initialBudget > 0 ? (totalConsumed / initialBudget) * 100 : 0;
   const percentageRemaining = Math.max(0, 100 - percentageConsumed);
 
@@ -385,6 +389,10 @@ export function calculateTravauxMetrics(fund = {}, profiles = [], splitRule = '5
     lots: lotStats,
     items,
     totalAllocatedLots: totalAllocated,
+    unallocatedBudget,
+    lotsRemaining,
+    lotsPercentageConsumed,
+    lotsPercentageRemaining,
     totalAxel,
     totalAriane,
     totalConsumed,

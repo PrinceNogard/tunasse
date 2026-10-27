@@ -212,6 +212,11 @@ describe('Finance & Calculation Engine Tests', () => {
       assert.equal(vmcLot.allocatedBudget, 1500);
       assert.equal(vmcLot.totalSpent, 636);
       assert.equal(vmcLot.remaining, 864);
+
+      // Check overall allocated lots metrics:
+      assert.equal(res.totalAllocatedLots, 50000);
+      assert.equal(res.unallocatedBudget, 0);
+      assert.equal(res.lotsRemaining, 36885.15);
     });
   });
 });

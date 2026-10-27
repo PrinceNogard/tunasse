@@ -245,6 +245,13 @@
             {
               name: 'calculateTravauxMetrics() : Nivellement 50/50 = Axel doit virer 1 255,43 € à Ariane',
               fn: () => calculateTravauxMetrics(DEFAULT_STATE.travauxFund).axelOwesAriane50 === 1255.43
+            },
+            {
+              name: 'calculateTravauxMetrics() : Réconciliation lots prévus (50 000 €) et réserve (0 €)',
+              fn: () => {
+                const trv = calculateTravauxMetrics(DEFAULT_STATE.travauxFund);
+                return trv.totalAllocatedLots === 50000 && trv.unallocatedBudget === 0 && trv.lotsRemaining === 36885.15;
+              }
             }
           ]
         },

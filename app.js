@@ -378,6 +378,15 @@ function updateLotsKpiStrip(m) {
     if (el) el.textContent = val;
   };
   setEl('lots-kpi-total-budget', formatCurrency(m.initialBudget));
+  setEl('lots-kpi-lots-allocated', formatCurrency(m.totalAllocatedLots || 0));
+
+  const unallocatedEl = document.getElementById('lots-kpi-unallocated');
+  if (unallocatedEl) {
+    const unallocated = m.unallocatedBudget !== undefined ? m.unallocatedBudget : (m.initialBudget - (m.totalAllocatedLots || 0));
+    unallocatedEl.textContent = `${unallocated >= 0 ? '+' : ''}${formatCurrency(unallocated)}`;
+    unallocatedEl.className = `lots-kpi-val font-mono ${unallocated >= 0 ? 'text-cyan' : 'text-rose'}`;
+  }
+
   setEl('lots-kpi-total-spent', formatCurrency(m.totalConsumed));
   setEl('lots-kpi-total-spent-pct', `(${m.percentageConsumed.toFixed(1)}%)`);
   setEl('lots-kpi-total-remaining', formatCurrency(m.remainingBudget));
@@ -448,10 +457,58 @@ function updateLotsTableFooter(m) {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
   };
-  setEl('tfoot-lots-budget', formatCurrency(m.initialBudget));
+
+  // 1. Sous-total des lots répartis
+  setEl('tfoot-lots-allocated', formatCurrency(m.totalAllocatedLots || 0));
   setEl('tfoot-lots-spent', formatCurrency(m.totalConsumed));
   setEl('tfoot-lots-axel', formatCurrency(m.totalAxel));
   setEl('tfoot-lots-ariane', formatCurrency(m.totalAriane));
+
+  const subRem = document.getElementById('tfoot-lots-subtotal-remaining');
+  if (subRem) {
+    const lotsRem = m.lotsRemaining !== undefined ? m.lotsRemaining : ((m.totalAllocatedLots || 0) - m.totalConsumed);
+    const isNeg = lotsRem < 0;
+    subRem.textContent = `${isNeg ? '-' : '+'}${formatCurrency(Math.abs(lotsRem))}`;
+    subRem.className = `text-right font-mono ${isNeg ? 'text-rose' : 'text-emerald'}`;
+  }
+
+  const subFill = document.getElementById('tfoot-lots-subtotal-fill');
+  const lotsPct = m.lotsPercentageConsumed !== undefined ? m.lotsPercentageConsumed : ((m.totalAllocatedLots > 0 ? (m.totalConsumed / m.totalAllocatedLots) * 100 : 0));
+  if (subFill) subFill.style.width = `${Math.min(100, lotsPct).toFixed(2)}%`;
+  setEl('tfoot-lots-subtotal-progress-pct', `${lotsPct.toFixed(1)}%`);
+
+  // 2. Reliquat non affecté / Réserve
+  const unallocated = m.unallocatedBudget !== undefined ? m.unallocatedBudget : (m.initialBudget - (m.totalAllocatedLots || 0));
+  const unallocatedStr = `${unallocated >= 0 ? '+' : '-'}${formatCurrency(Math.abs(unallocated))}`;
+  setEl('tfoot-lots-unallocated', unallocatedStr);
+  setEl('tfoot-lots-unallocated-rem', unallocatedStr);
+
+  const unallocBadge = document.getElementById('tfoot-unallocated-badge');
+  const unallocDesc = document.getElementById('tfoot-unallocated-desc');
+  if (unallocBadge) {
+    if (unallocated >= 0) {
+      unallocBadge.textContent = 'En réserve';
+      unallocBadge.style.background = 'rgba(14,165,233,0.15)';
+      unallocBadge.style.color = '#38bdf8';
+    } else {
+      unallocBadge.textContent = 'Dépassement';
+      unallocBadge.style.background = 'rgba(244,63,94,0.15)';
+      unallocBadge.style.color = '#f43f5e';
+    }
+  }
+  if (unallocDesc) {
+    if (unallocated >= 0) {
+      unallocDesc.textContent = `Part du fonds dédié de ${formatCurrency(m.initialBudget)} non encore ventilée sur un lot`;
+    } else {
+      unallocDesc.textContent = `Les budgets des lots prévus dépassent le fonds dédié de ${formatCurrency(Math.abs(unallocated))}`;
+    }
+  }
+
+  // 3. Total général consolidé de l'enveloppe travaux
+  setEl('tfoot-lots-budget', formatCurrency(m.initialBudget));
+  setEl('tfoot-lots-total-spent', formatCurrency(m.totalConsumed));
+  setEl('tfoot-lots-total-axel', formatCurrency(m.totalAxel));
+  setEl('tfoot-lots-total-ariane', formatCurrency(m.totalAriane));
 
   const footRem = document.getElementById('tfoot-lots-remaining');
   if (footRem) {
