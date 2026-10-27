@@ -383,15 +383,17 @@ function updateLotsKpiStrip(m) {
     if (el) el.textContent = val;
   };
   const totalAlloc = m.totalAllocatedLots != null ? m.totalAllocatedLots : m.initialBudget;
-  const rem = m.lotsRemaining != null ? m.lotsRemaining : m.remainingBudget;
+  const rem = m.lotsRemaining != null ? m.lotsRemaining : (totalAlloc - m.totalConsumed);
   const pct = m.lotsSpentPct != null ? m.lotsSpentPct : (m.lotsPercentageConsumed != null ? m.lotsPercentageConsumed : m.percentageConsumed);
   const remPct = m.lotsRemainingPct != null ? m.lotsRemainingPct : m.percentageRemaining;
+  const unalloc = m.unallocatedBudget != null ? m.unallocatedBudget : ((m.remainingBudget != null ? m.remainingBudget : (m.initialBudget - m.totalConsumed)) - rem);
 
   setEl('lots-kpi-total-budget', formatCurrency(totalAlloc));
   setEl('lots-kpi-total-spent', formatCurrency(m.totalConsumed));
   setEl('lots-kpi-total-spent-pct', `(${pct.toFixed(1)}%)`);
   setEl('lots-kpi-total-remaining', formatCurrency(rem));
   setEl('lots-kpi-total-rem-pct', `(${remPct.toFixed(1)}%)`);
+  setEl('lots-kpi-reserve', formatCurrency(unalloc));
   setEl('lots-kpi-axel', formatCurrency(m.totalAxel));
   setEl('lots-kpi-ariane', formatCurrency(m.totalAriane));
 }
@@ -500,8 +502,14 @@ function updateLotsTableFooter(m) {
   }
 
   // 2. Réserve / Disponible non chiffré sur l'enveloppe
-  const unalloc = m.unallocatedBudget != null ? m.unallocatedBudget : (m.initialBudget - totalAlloc);
+  // Calcul explicite : Solde restant de l'enveloppe - Prévu chantiers restant à payer
+  const remBudget = m.remainingBudget != null ? m.remainingBudget : (m.initialBudget - m.totalConsumed);
+  const plannedRem = m.lotsRemaining != null ? m.lotsRemaining : (totalAlloc - m.totalConsumed);
+  const unalloc = m.unallocatedBudget != null ? m.unallocatedBudget : Number((remBudget - plannedRem).toFixed(2));
   const isUnallocNeg = unalloc < 0;
+
+  setEl('tfoot-reserve-calc-label', `Solde enveloppe (${formatCurrency(remBudget)}) − Prévu chantiers (${formatCurrency(plannedRem)})`);
+
   const reserveEl = document.getElementById('tfoot-reserve-budget');
   if (reserveEl) {
     reserveEl.textContent = `${isUnallocNeg ? '-' : '+'}${formatCurrency(Math.abs(unalloc))}`;
@@ -512,7 +520,7 @@ function updateLotsTableFooter(m) {
     reserveRemEl.textContent = `${isUnallocNeg ? '-' : '+'}${formatCurrency(Math.abs(unalloc))}`;
     reserveRemEl.className = `text-right font-mono ${isUnallocNeg ? 'text-rose' : 'text-emerald'}`;
   }
-  const marginPct = m.marginPct != null ? m.marginPct : (m.initialBudget > 0 ? (unalloc / m.initialBudget) * 100 : 0);
+  const marginPct = m.initialBudget > 0 ? (Math.max(0, unalloc) / m.initialBudget) * 100 : 0;
   setEl('tfoot-reserve-pct', `${marginPct.toFixed(1)}% de l'enveloppe`);
 
   const reserveBadge = document.getElementById('tfoot-reserve-badge');
@@ -792,6 +800,9 @@ function renderTravauxKpiAndBars(m) {
   setEl('trv-kpi-items-count', `Sur ${m.items.length} factures / acomptes`);
   setEl('trv-kpi-remaining', formatCurrency(m.remainingBudget));
   setEl('trv-kpi-remaining-badge', `${m.percentageRemaining.toFixed(1)}% dispo`);
+  const planned = m.lotsRemaining != null ? m.lotsRemaining : (m.pendingPlannedBudget != null ? m.pendingPlannedBudget : 0);
+  const reserve = m.unallocatedBudget != null ? m.unallocatedBudget : (m.marginBudget || 0);
+  setEl('trv-kpi-remaining-subtext', `Dont ${formatCurrency(planned)} prévus chantiers • ${formatCurrency(reserve)} réserve libre`);
 
   const deltaValEl = document.getElementById('trv-kpi-delta');
   const deltaSubEl = document.getElementById('trv-kpi-delta-sub');

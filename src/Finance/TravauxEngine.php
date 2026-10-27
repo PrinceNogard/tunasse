@@ -194,10 +194,12 @@ class TravauxEngine
 
         $pendingPlannedBudget = max(0.0, round($lotResult['totalAllocated'] - $totalConsumed, 2));
         $pendingPlannedPct = $initialBudget > 0.0 ? round(($pendingPlannedBudget / $initialBudget) * 100.0, 1) : 0.0;
-        $marginBudget = max(0.0, round($initialBudget - $lotResult['totalAllocated'], 2));
+        // Réserve non allouée = Solde restant de l'enveloppe - Prévu chantiers à payer
+        $unallocatedBudget = round($remainingBudget - $pendingPlannedBudget, 2);
+        $marginBudget = max(0.0, $unallocatedBudget);
         $marginPct = $initialBudget > 0.0 ? round(($marginBudget / $initialBudget) * 100.0, 1) : 0.0;
-        $isOverAllocated = $lotResult['totalAllocated'] > $initialBudget;
-        $overAllocatedAmount = $isOverAllocated ? round($lotResult['totalAllocated'] - $initialBudget, 2) : 0.0;
+        $isOverAllocated = $unallocatedBudget < 0.0;
+        $overAllocatedAmount = $isOverAllocated ? abs($unallocatedBudget) : 0.0;
 
         return array_merge([
             'initialBudget' => $initialBudget,

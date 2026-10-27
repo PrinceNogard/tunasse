@@ -939,11 +939,11 @@
 
             <div class="kpi-card">
               <div class="kpi-header">
-                <span class="kpi-label">Solde Restant Disponible</span>
+                <span class="kpi-label">Solde Restant Enveloppe</span>
                 <span class="bank-tag emerald-tag" id="trv-kpi-remaining-badge">73,8% dispo</span>
               </div>
               <div class="kpi-value font-mono text-emerald" id="trv-kpi-remaining">36 885,15 €</div>
-              <span class="kpi-subtext">Disponible pour la suite des chantiers</span>
+              <span class="kpi-subtext" id="trv-kpi-remaining-subtext">Dont 36 885,15 € prévus chantiers • 0,00 € réserve non allouée</span>
             </div>
 
             <div class="kpi-card">
@@ -1117,18 +1117,23 @@
           <!-- Quick Indicators Strip -->
           <div class="lots-kpi-strip mt-3 mb-4">
             <div class="lots-kpi-item">
-              <span class="lots-kpi-label">Budget de Base Total :</span>
+              <span class="lots-kpi-label">Lots Chiffrés :</span>
               <strong class="lots-kpi-val text-cyan font-mono" id="lots-kpi-total-budget">50 000,00 €</strong>
             </div>
             <div class="lots-kpi-item">
-              <span class="lots-kpi-label">Total Dépensé Noté :</span>
+              <span class="lots-kpi-label">Total Dépensé :</span>
               <strong class="lots-kpi-val text-amber font-mono" id="lots-kpi-total-spent">13 114,85 €</strong>
               <small class="lots-kpi-pct" id="lots-kpi-total-spent-pct">(26,2%)</small>
             </div>
             <div class="lots-kpi-item">
-              <span class="lots-kpi-label">Reste Disponible :</span>
-              <strong class="lots-kpi-val text-emerald font-mono" id="lots-kpi-total-remaining">36 885,15 €</strong>
+              <span class="lots-kpi-label">Prévu Chantiers (à payer) :</span>
+              <strong class="lots-kpi-val text-amber font-mono" id="lots-kpi-total-remaining">36 885,15 €</strong>
               <small class="lots-kpi-pct" id="lots-kpi-total-rem-pct">(73,8%)</small>
+            </div>
+            <div class="lots-kpi-item">
+              <span class="lots-kpi-label">🛡️ Réserve Non Allouée :</span>
+              <strong class="lots-kpi-val text-emerald font-mono" id="lots-kpi-reserve">0,00 €</strong>
+              <small class="lots-kpi-pct" style="color:var(--text-dim);">(dispo − prévu)</small>
             </div>
             <div class="lots-kpi-item">
               <span class="lots-kpi-label">Avances Axel / Ariane :</span>
@@ -1185,8 +1190,8 @@
                 <tr class="tfoot-row-reserve" id="tfoot-row-reserve">
                   <td colspan="2">
                     <div style="display:flex; flex-direction:column;">
-                      <strong style="color:var(--text-muted); font-size:0.84rem;">🛡️ RÉSERVE / DISPONIBLE NON CHIFFRÉ</strong>
-                      <small style="color:var(--text-dim); font-size:0.72rem;">Marge libre restante non encore allouée aux chantiers</small>
+                      <strong style="color:var(--text-muted); font-size:0.84rem;">🛡️ RÉSERVE / DISPONIBLE NON ALLOUÉ</strong>
+                      <small style="color:var(--text-dim); font-size:0.72rem;" id="tfoot-reserve-calc-label">Solde enveloppe (36 885,15 €) − Prévu chantiers à payer (24 885,15 €)</small>
                     </div>
                   </td>
                   <td class="text-right font-mono text-emerald" style="font-weight:600;" id="tfoot-reserve-budget">+12 000,00 €</td>

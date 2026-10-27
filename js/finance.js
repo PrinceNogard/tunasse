@@ -374,7 +374,6 @@ export function calculateTravauxMetrics(fund = {}, profiles = [], splitRule = '5
 
   const totalConsumed = totalAxel + totalAriane;
   const remainingBudget = initialBudget - totalConsumed;
-  const unallocatedBudget = Number((initialBudget - totalAllocated).toFixed(2));
   const lotsRemaining = Number((totalAllocated - totalConsumed).toFixed(2));
   const lotsPercentageConsumed = totalAllocated > 0 ? (totalConsumed / totalAllocated) * 100 : 0;
   const lotsPercentageRemaining = Math.max(0, 100 - lotsPercentageConsumed);
@@ -383,10 +382,12 @@ export function calculateTravauxMetrics(fund = {}, profiles = [], splitRule = '5
 
   const pendingPlannedBudget = Math.max(0, Number((totalAllocated - totalConsumed).toFixed(2)));
   const pendingPlannedPct = initialBudget > 0 ? Number(((pendingPlannedBudget / initialBudget) * 100).toFixed(1)) : 0;
-  const marginBudget = Math.max(0, Number((initialBudget - totalAllocated).toFixed(2)));
+  // Réserve non allouée = Solde restant de l'enveloppe - Prévu chantiers à payer
+  const unallocatedBudget = Number((remainingBudget - pendingPlannedBudget).toFixed(2));
+  const marginBudget = Math.max(0, unallocatedBudget);
   const marginPct = initialBudget > 0 ? Number(((marginBudget / initialBudget) * 100).toFixed(1)) : 0;
-  const isOverAllocated = totalAllocated > initialBudget;
-  const overAllocatedAmount = isOverAllocated ? Number((totalAllocated - initialBudget).toFixed(2)) : 0;
+  const isOverAllocated = unallocatedBudget < 0;
+  const overAllocatedAmount = isOverAllocated ? Math.abs(unallocatedBudget) : 0;
 
   const axelShareOfConsumed = totalConsumed > 0 ? (totalAxel / totalConsumed) * 100 : 50;
   const arianeShareOfConsumed = totalConsumed > 0 ? (totalAriane / totalConsumed) * 100 : 50;
