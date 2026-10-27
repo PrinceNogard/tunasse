@@ -708,14 +708,20 @@ function renderTravauxDashboardWidget(m) {
     }
   }
 
-  const barAxel = document.getElementById('dash-trv-bar-axel');
-  const barAriane = document.getElementById('dash-trv-bar-ariane');
-  if (barAxel) barAxel.style.width = `${m.axelBudgetPct.toFixed(2)}%`;
-  if (barAriane) barAriane.style.width = `${m.arianeBudgetPct.toFixed(2)}%`;
+  const dashBarAxel = document.getElementById('dash-trv-bar-axel');
+  const dashBarAriane = document.getElementById('dash-trv-bar-ariane');
+  const dashBarPlanned = document.getElementById('dash-trv-bar-planned');
+  const dashBarRem = document.getElementById('dash-trv-bar-remaining');
+  if (dashBarAxel) dashBarAxel.style.width = `${m.axelBudgetPct.toFixed(2)}%`;
+  if (dashBarAriane) dashBarAriane.style.width = `${m.arianeBudgetPct.toFixed(2)}%`;
+  if (dashBarPlanned) dashBarPlanned.style.width = `${Math.max(0, Math.min(100 - (m.axelBudgetPct + m.arianeBudgetPct), m.pendingPlannedPct)).toFixed(2)}%`;
+  if (dashBarRem) dashBarRem.style.width = `${Math.max(0, m.marginPct || 0).toFixed(2)}%`;
 
-  document.getElementById('dash-trv-legend-axel').textContent = formatCurrency(m.totalAxel);
-  document.getElementById('dash-trv-legend-ariane').textContent = formatCurrency(m.totalAriane);
-  document.getElementById('dash-trv-legend-rem').textContent = formatCurrency(m.remainingBudget);
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setEl('dash-trv-legend-axel', formatCurrency(m.totalAxel));
+  setEl('dash-trv-legend-ariane', formatCurrency(m.totalAriane));
+  setEl('dash-trv-legend-planned', formatCurrency(m.pendingPlannedBudget));
+  setEl('dash-trv-legend-rem', formatCurrency(m.marginBudget || 0));
 
   const topTrvTag = document.getElementById('top-travaux-tag');
   if (topTrvTag) topTrvTag.textContent = `Reste ${formatCurrency(m.remainingBudget)}`;
@@ -747,22 +753,46 @@ function renderTravauxKpiAndBars(m) {
     deltaSubEl.textContent = isArianeLeading ? "Ariane a avancé plus qu'Axel" : "Axel a avancé plus qu'Ariane";
   }
 
-  setEl('trv-visual-status', `${formatCurrency(m.totalConsumed)} consommés • ${formatCurrency(m.remainingBudget)} disponibles`);
+  if (m.marginBudget > 0) {
+    setEl('trv-visual-status', `${formatCurrency(m.totalConsumed)} payés • ${formatCurrency(m.pendingPlannedBudget)} prévus chantiers • ${formatCurrency(m.marginBudget)} réserve libre`);
+  } else if (m.isOverAllocated) {
+    setEl('trv-visual-status', `${formatCurrency(m.totalConsumed)} payés • ${formatCurrency(m.pendingPlannedBudget)} prévus chantiers (sur-allocation +${formatCurrency(m.overAllocatedAmount)})`);
+  } else {
+    setEl('trv-visual-status', `${formatCurrency(m.totalConsumed)} payés • ${formatCurrency(m.pendingPlannedBudget)} prévus chantiers à consommer`);
+  }
 
   const barAxel = document.getElementById('trv-bar-axel');
   const barAriane = document.getElementById('trv-bar-ariane');
+  const barPlanned = document.getElementById('trv-bar-planned');
   const barRem = document.getElementById('trv-bar-remaining');
 
-  if (barAxel) barAxel.style.width = `${m.axelBudgetPct.toFixed(2)}%`;
-  if (barAriane) barAriane.style.width = `${m.arianeBudgetPct.toFixed(2)}%`;
-  if (barRem) barRem.style.width = `${Math.max(0, m.remainingBudgetPct).toFixed(2)}%`;
+  if (barAxel) {
+    barAxel.style.width = `${m.axelBudgetPct.toFixed(2)}%`;
+    barAxel.title = `Avance Axel : ${formatCurrency(m.totalAxel)} (${m.axelShareOfConsumed.toFixed(1)}% du payé)`;
+  }
+  if (barAriane) {
+    barAriane.style.width = `${m.arianeBudgetPct.toFixed(2)}%`;
+    barAriane.title = `Avance Ariane : ${formatCurrency(m.totalAriane)} (${m.arianeShareOfConsumed.toFixed(1)}% du payé)`;
+  }
+  if (barPlanned) {
+    const plannedWidth = Math.min(100 - (m.axelBudgetPct + m.arianeBudgetPct), m.pendingPlannedPct);
+    barPlanned.style.width = `${Math.max(0, plannedWidth).toFixed(2)}%`;
+    barPlanned.title = `Prévu chantiers restant à payer : ${formatCurrency(m.pendingPlannedBudget)} (${m.pendingPlannedPct.toFixed(1)}% de l'enveloppe)`;
+  }
+  if (barRem) {
+    const remWidth = Math.max(0, m.marginPct || 0);
+    barRem.style.width = `${remWidth.toFixed(2)}%`;
+    barRem.title = `Réserve libre non allouée : ${formatCurrency(m.marginBudget || 0)} (${(m.marginPct || 0).toFixed(1)}%)`;
+  }
 
   setEl('trv-legend-axel-val', formatCurrency(m.totalAxel));
-  setEl('trv-legend-axel-pct', `${m.axelShareOfConsumed.toFixed(1)}% du consommé • ${m.axelBudgetPct.toFixed(1)}% du budget`);
+  setEl('trv-legend-axel-pct', `${m.axelShareOfConsumed.toFixed(1)}% du payé • ${m.axelBudgetPct.toFixed(1)}% du budget`);
   setEl('trv-legend-ariane-val', formatCurrency(m.totalAriane));
-  setEl('trv-legend-ariane-pct', `${m.arianeShareOfConsumed.toFixed(1)}% du consommé • ${m.arianeBudgetPct.toFixed(1)}% du budget`);
-  setEl('trv-legend-rem-val', formatCurrency(m.remainingBudget));
-  setEl('trv-legend-rem-pct', `${m.percentageRemaining.toFixed(1)}% du budget restant`);
+  setEl('trv-legend-ariane-pct', `${m.arianeShareOfConsumed.toFixed(1)}% du payé • ${m.arianeBudgetPct.toFixed(1)}% du budget`);
+  setEl('trv-legend-planned-val', formatCurrency(m.pendingPlannedBudget));
+  setEl('trv-legend-planned-pct', `${m.pendingPlannedPct.toFixed(1)}% de l'enveloppe chantiers`);
+  setEl('trv-legend-rem-val', formatCurrency(m.marginBudget || 0));
+  setEl('trv-legend-rem-pct', `${(m.marginPct || 0).toFixed(1)}% non engagé`);
 }
 
 function renderTravauxSettlement(m) {

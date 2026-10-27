@@ -279,11 +279,14 @@ $recentExpenses = array_slice(array_reverse($state['expenses'] ?? []), 0, 8);
             <div class="travaux-progress-bar">
               <div class="travaux-bar-segment segment-axel" id="dash-trv-bar-axel" style="width: <?= $travaux['axelPctOfBudget'] ?? 10.6 ?>%;" title="Avance <?= htmlspecialchars($p1['name']) ?> : <?= Format::currency($travaux['totalAxel'] ?? 5302) ?>"></div>
               <div class="travaux-bar-segment segment-ariane" id="dash-trv-bar-ariane" style="width: <?= $travaux['arianePctOfBudget'] ?? 15.63 ?>%;" title="Avance <?= htmlspecialchars($p2['name']) ?> : <?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?>"></div>
+              <div class="travaux-bar-segment segment-planned" id="dash-trv-bar-planned" style="width: <?= $travaux['pendingPlannedPct'] ?? 73.77 ?>%;" title="Prévu chantiers restant : <?= Format::currency($travaux['pendingPlannedBudget'] ?? 36885.15) ?>"></div>
+              <div class="travaux-bar-segment segment-remaining" id="dash-trv-bar-remaining" style="width: <?= $travaux['marginPct'] ?? 0 ?>%;" title="Réserve / Non alloué : <?= Format::currency($travaux['marginBudget'] ?? 0) ?>"></div>
             </div>
             <div class="travaux-progress-legend">
-              <span class="legend-chip"><span class="chip-dot dot-cyan"></span> <?= htmlspecialchars($p1['name']) ?> : <strong id="dash-trv-legend-axel"><?= Format::currency($travaux['totalAxel'] ?? 5302) ?></strong> (<?= $travaux['axelPctOfSpent'] ?? 40.4 ?>%)</span>
-              <span class="legend-chip"><span class="chip-dot dot-violet"></span> <?= htmlspecialchars($p2['name']) ?> : <strong id="dash-trv-legend-ariane"><?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?></strong> (<?= $travaux['arianePctOfSpent'] ?? 59.6 ?>%)</span>
-              <span class="legend-chip"><span class="chip-dot dot-slate"></span> Restant : <strong id="dash-trv-legend-rem"><?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?></strong> (<?= $travaux['remainingPct'] ?? 73.8 ?>%)</span>
+              <span class="legend-chip"><span class="chip-dot dot-cyan"></span> <?= htmlspecialchars($p1['name']) ?> : <strong id="dash-trv-legend-axel"><?= Format::currency($travaux['totalAxel'] ?? 5302) ?></strong></span>
+              <span class="legend-chip"><span class="chip-dot dot-violet"></span> <?= htmlspecialchars($p2['name']) ?> : <strong id="dash-trv-legend-ariane"><?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?></strong></span>
+              <span class="legend-chip"><span class="chip-dot dot-amber"></span> Prévu chantiers : <strong id="dash-trv-legend-planned"><?= Format::currency($travaux['pendingPlannedBudget'] ?? 36885.15) ?></strong></span>
+              <span class="legend-chip"><span class="chip-dot dot-emerald"></span> Réserve : <strong id="dash-trv-legend-rem"><?= Format::currency($travaux['marginBudget'] ?? 0) ?></strong></span>
             </div>
           </div>
         </div>

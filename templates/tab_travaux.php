@@ -77,13 +77,14 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
           <div class="travaux-visual-box mt-6">
             <div class="visual-box-header">
               <span class="visual-box-title">Progression de l'Enveloppe (<?= Format::currency($travaux['totalBudget'] ?? 50000) ?>)</span>
-              <span class="visual-box-status" id="trv-visual-status"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?> consommés • <?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?> disponibles</span>
+              <span class="visual-box-status" id="trv-visual-status"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?> payés • <?= Format::currency($travaux['pendingPlannedBudget'] ?? 36885.15) ?> prévus chantiers<?= !empty($travaux['marginBudget']) && $travaux['marginBudget'] > 0 ? ' • ' . Format::currency($travaux['marginBudget']) . ' réserve libre' : '' ?></span>
             </div>
 
             <div class="travaux-progress-bar-large">
-              <div class="travaux-bar-segment segment-axel" id="trv-bar-axel" style="width: <?= $travaux['axelPctOfBudget'] ?? 10.6 ?>%;" title="Avance <?= htmlspecialchars($p1['name']) ?> : <?= Format::currency($travaux['totalAxel'] ?? 5302) ?> (<?= $travaux['axelPctOfSpent'] ?? 40.4 ?>% du consommé)"></div>
-              <div class="travaux-bar-segment segment-ariane" id="trv-bar-ariane" style="width: <?= $travaux['arianePctOfBudget'] ?? 15.63 ?>%;" title="Avance <?= htmlspecialchars($p2['name']) ?> : <?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?> (<?= $travaux['arianePctOfSpent'] ?? 59.6 ?>% du consommé)"></div>
-              <div class="travaux-bar-segment segment-remaining" id="trv-bar-remaining" style="width: <?= $travaux['remainingPct'] ?? 73.77 ?>%;" title="Solde restant : <?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?> (<?= $travaux['remainingPct'] ?? 73.8 ?>%)"></div>
+              <div class="travaux-bar-segment segment-axel" id="trv-bar-axel" style="width: <?= $travaux['axelPctOfBudget'] ?? 10.6 ?>%;" title="Avance <?= htmlspecialchars($p1['name']) ?> : <?= Format::currency($travaux['totalAxel'] ?? 5302) ?> (<?= $travaux['axelPctOfSpent'] ?? 40.4 ?>% du payé)"></div>
+              <div class="travaux-bar-segment segment-ariane" id="trv-bar-ariane" style="width: <?= $travaux['arianePctOfBudget'] ?? 15.63 ?>%;" title="Avance <?= htmlspecialchars($p2['name']) ?> : <?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?> (<?= $travaux['arianePctOfSpent'] ?? 59.6 ?>% du payé)"></div>
+              <div class="travaux-bar-segment segment-planned" id="trv-bar-planned" style="width: <?= $travaux['pendingPlannedPct'] ?? 73.77 ?>%;" title="Prévu chantiers restant à payer : <?= Format::currency($travaux['pendingPlannedBudget'] ?? 36885.15) ?> (<?= $travaux['pendingPlannedPct'] ?? 73.8 ?>% de l'enveloppe)"></div>
+              <div class="travaux-bar-segment segment-remaining" id="trv-bar-remaining" style="width: <?= $travaux['marginPct'] ?? 0 ?>%;" title="Réserve / Non alloué : <?= Format::currency($travaux['marginBudget'] ?? 0) ?> (<?= $travaux['marginPct'] ?? 0 ?>%)"></div>
             </div>
 
             <div class="travaux-visual-legend">
@@ -93,7 +94,7 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
                   <strong>Avancé par <?= htmlspecialchars($p1['name']) ?></strong>
                 </div>
                 <div class="legend-val text-cyan font-mono" id="trv-legend-axel-val"><?= Format::currency($travaux['totalAxel'] ?? 5302) ?></div>
-                <span class="legend-pct" id="trv-legend-axel-pct"><?= $travaux['axelPctOfSpent'] ?? 40.43 ?>% du consommé • <?= $travaux['axelPctOfBudget'] ?? 10.6 ?>% du budget</span>
+                <span class="legend-pct" id="trv-legend-axel-pct"><?= $travaux['axelPctOfSpent'] ?? 40.43 ?>% du payé • <?= $travaux['axelPctOfBudget'] ?? 10.6 ?>% du budget</span>
               </div>
 
               <div class="legend-col">
@@ -102,16 +103,25 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
                   <strong>Avancé par <?= htmlspecialchars($p2['name']) ?></strong>
                 </div>
                 <div class="legend-val text-violet font-mono" id="trv-legend-ariane-val"><?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?></div>
-                <span class="legend-pct" id="trv-legend-ariane-pct"><?= $travaux['arianePctOfSpent'] ?? 59.57 ?>% du consommé • <?= $travaux['arianePctOfBudget'] ?? 15.63 ?>% du budget</span>
+                <span class="legend-pct" id="trv-legend-ariane-pct"><?= $travaux['arianePctOfSpent'] ?? 59.57 ?>% du payé • <?= $travaux['arianePctOfBudget'] ?? 15.63 ?>% du budget</span>
+              </div>
+
+              <div class="legend-col">
+                <div class="legend-dot-label">
+                  <span class="chip-dot dot-amber"></span>
+                  <strong>Prévu Chantiers (à payer)</strong>
+                </div>
+                <div class="legend-val text-amber font-mono" id="trv-legend-planned-val"><?= Format::currency($travaux['pendingPlannedBudget'] ?? 36885.15) ?></div>
+                <span class="legend-pct" id="trv-legend-planned-pct"><?= $travaux['pendingPlannedPct'] ?? 73.77 ?>% de l'enveloppe chantiers</span>
               </div>
 
               <div class="legend-col">
                 <div class="legend-dot-label">
                   <span class="chip-dot dot-emerald"></span>
-                  <strong>Reste Disponible</strong>
+                  <strong>Réserve / Non Alloué</strong>
                 </div>
-                <div class="legend-val text-emerald font-mono" id="trv-legend-rem-val"><?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?></div>
-                <span class="legend-pct" id="trv-legend-rem-pct"><?= $travaux['remainingPct'] ?? 73.77 ?>% du budget restant</span>
+                <div class="legend-val text-emerald font-mono" id="trv-legend-rem-val"><?= Format::currency($travaux['marginBudget'] ?? 0) ?></div>
+                <span class="legend-pct" id="trv-legend-rem-pct"><?= $travaux['marginPct'] ?? 0 ?>% non engagé</span>
               </div>
             </div>
           </div>
