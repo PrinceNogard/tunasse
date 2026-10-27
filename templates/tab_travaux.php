@@ -76,130 +76,17 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
           <!-- Visual Multi-segment Progress Bar -->
           <div class="travaux-visual-box mt-6">
             <div class="visual-box-header">
-              <div>
-                <span class="visual-box-title">Progression & Engagements de l'Enveloppe (<?= Format::currency($travaux['totalBudget'] ?? 50000) ?>)</span>
-                <div class="visual-box-subtext" style="color:var(--text-muted); font-size:0.75rem; margin-top:2px;">
-                  Suivi des budgets prévus par pôle de travaux, des dépenses réelles et de la marge restante
-                </div>
-              </div>
-              <div class="visual-box-right-metrics" style="text-align:right;">
-                <span class="visual-box-status" id="trv-visual-status"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?> consommés • <?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?> disponibles</span>
-                <div id="trv-visual-margin-quick" style="font-size:0.75rem; font-family:var(--font-mono); font-weight:600; color:<?= ($travaux['unallocatedBudget'] ?? 0) >= 0 ? '#38bdf8' : '#f43f5e' ?>;">
-                  <?= ($travaux['unallocatedBudget'] ?? 0) >= 0 ? ('Marge libre restante : +' . Format::currency($travaux['unallocatedBudget'] ?? 0)) : ('Dépassement prévisionnel : -' . Format::currency(abs($travaux['unallocatedBudget'] ?? 0))) ?>
-                </div>
-              </div>
+              <span class="visual-box-title">Progression de l'Enveloppe (<?= Format::currency($travaux['totalBudget'] ?? 50000) ?>)</span>
+              <span class="visual-box-status" id="trv-visual-status"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?> consommés • <?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?> disponibles</span>
             </div>
 
-            <!-- 1. Barre A : Ventilation Prévisionnelle par Pôle de Travaux (Budgets Prévus) -->
-            <div class="visual-bar-section mb-3">
-              <div class="visual-bar-label-row">
-                <span class="visual-bar-label">
-                  <strong>1. Répartition par Pôle de Travaux (Budgets Prévus sur les 50 000 €) :</strong>
-                </span>
-                <span class="visual-bar-sublabel font-mono" id="trv-poles-bar-summary">
-                  <?= Format::currency($travaux['totalAllocatedLots'] ?? 50000) ?> alloués sur <?= Format::currency($travaux['totalBudget'] ?? 50000) ?> (<?= min(100, round((($travaux['totalAllocatedLots'] ?? 50000) / ($travaux['totalBudget'] ?? 50000)) * 100, 1)) ?>%)
-                </span>
-              </div>
-              
-              <div class="trv-poles-progress-bar" id="trv-poles-bar">
-                <?php 
-                $lotColors = [
-                    '#0ea5e9', '#f97316', '#10b981', '#8b5cf6', '#f59e0b', '#14b8a6', '#6366f1', '#ec4899', '#64748b'
-                ];
-                $idx = 0;
-                foreach ($lots as $lot): 
-                    $color = $lotColors[$idx % count($lotColors)];
-                    $w = $lot['envelopePct'] ?? 0;
-                    $idx++;
-                ?>
-                  <div class="trv-segment-pole" 
-                       data-lot-id="<?= htmlspecialchars($lot['id']) ?>"
-                       style="width: <?= htmlspecialchars((string)$w) ?>%; background-color: <?= htmlspecialchars($color) ?>;" 
-                       title="<?= htmlspecialchars($lot['name']) ?> • Budget Prévu : <?= Format::currency($lot['budget']) ?> (<?= htmlspecialchars((string)$w) ?>% de l'enveloppe) • Dépensé : <?= Format::currency($lot['spent']) ?>">
-                    <span class="segment-inner-icon"><?= htmlspecialchars($lot['icon'] ?? '🔨') ?></span>
-                  </div>
-                <?php endforeach; ?>
-                <?php if (($travaux['unallocatedBudget'] ?? 0) > 0): ?>
-                  <div class="travaux-bar-segment segment-free-margin" 
-                       id="trv-bar-unallocated" 
-                       style="width: <?= $travaux['marginPct'] ?? 0 ?>%;" 
-                       title="Marge libre non allouée : <?= Format::currency($travaux['unallocatedBudget'] ?? 0) ?> (<?= $travaux['marginPct'] ?? 0 ?>%)">
-                  </div>
-                <?php endif; ?>
-              </div>
+            <div class="travaux-progress-bar-large">
+              <div class="travaux-bar-segment segment-axel" id="trv-bar-axel" style="width: <?= $travaux['axelPctOfBudget'] ?? 10.6 ?>%;" title="Avance <?= htmlspecialchars($p1['name']) ?> : <?= Format::currency($travaux['totalAxel'] ?? 5302) ?> (<?= $travaux['axelPctOfSpent'] ?? 40.4 ?>% du consommé)"></div>
+              <div class="travaux-bar-segment segment-ariane" id="trv-bar-ariane" style="width: <?= $travaux['arianePctOfBudget'] ?? 15.63 ?>%;" title="Avance <?= htmlspecialchars($p2['name']) ?> : <?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?> (<?= $travaux['arianePctOfSpent'] ?? 59.6 ?>% du consommé)"></div>
+              <div class="travaux-bar-segment segment-remaining" id="trv-bar-remaining" style="width: <?= $travaux['remainingPct'] ?? 73.77 ?>%;" title="Solde restant : <?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?> (<?= $travaux['remainingPct'] ?? 73.8 ?>%)"></div>
             </div>
 
-            <!-- 2. Barre B : Progression Globale (Réalisé vs Prévu restant vs Marge Libre) -->
-            <div class="visual-bar-section mb-3">
-              <div class="visual-bar-label-row">
-                <span class="visual-bar-label">
-                  <strong>2. Consommé Réel vs Reste Prévu sur Pôles vs Marge :</strong>
-                </span>
-                <span class="visual-bar-sublabel font-mono" id="trv-spent-vs-planned-summary">
-                  <?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?> payés • <?= Format::currency($travaux['pendingPlannedBudget'] ?? 36885.15) ?> prévus à venir
-                </span>
-              </div>
-
-              <div class="travaux-progress-bar-large">
-                <div class="travaux-bar-segment segment-axel" id="trv-bar-axel" style="width: <?= $travaux['axelPctOfBudget'] ?? 10.6 ?>%;" title="Avance <?= htmlspecialchars($p1['name']) ?> : <?= Format::currency($travaux['totalAxel'] ?? 5302) ?> (<?= $travaux['axelPctOfBudget'] ?? 10.6 ?>% de l'enveloppe)"></div>
-                <div class="travaux-bar-segment segment-ariane" id="trv-bar-ariane" style="width: <?= $travaux['arianePctOfBudget'] ?? 15.63 ?>%;" title="Avance <?= htmlspecialchars($p2['name']) ?> : <?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?> (<?= $travaux['arianePctOfBudget'] ?? 15.63 ?>% de l'enveloppe)"></div>
-                <div class="travaux-bar-segment segment-planned-pending" id="trv-bar-planned-pending" style="width: <?= $travaux['pendingPlannedPct'] ?? 73.77 ?>%;" title="Budgets Prévus restants sur les chantiers : <?= Format::currency($travaux['pendingPlannedBudget'] ?? 36885.15) ?> (<?= $travaux['pendingPlannedPct'] ?? 73.8 ?>% de l'enveloppe)"></div>
-                <div class="travaux-bar-segment segment-free-margin" id="trv-bar-margin-free" style="width: <?= $travaux['marginPct'] ?? 0 ?>%;" title="Marge libre restante : <?= Format::currency($travaux['marginBudget'] ?? 0) ?> (<?= $travaux['marginPct'] ?? 0 ?>%)"></div>
-                <div class="travaux-bar-segment segment-remaining" id="trv-bar-remaining" style="display:none; width: <?= $travaux['remainingPct'] ?? 73.77 ?>%;"></div>
-              </div>
-            </div>
-
-            <!-- 3. Encadré d'Alerte / Contrôle de la Marge Restante -->
-            <div class="trv-margin-banner mt-3" id="trv-margin-banner">
-              <div class="margin-banner-left">
-                <span class="margin-banner-icon"><?= ($travaux['unallocatedBudget'] ?? 0) >= 0 ? '🛡️' : '⚠️' ?></span>
-                <div>
-                  <strong class="margin-banner-title" id="trv-margin-banner-title">
-                    <?= ($travaux['unallocatedBudget'] ?? 0) > 0 
-                        ? ('Marge Libre Restante sur l\'Enveloppe : +' . Format::currency($travaux['unallocatedBudget'] ?? 0))
-                        : (($travaux['unallocatedBudget'] ?? 0) === 0.0 
-                            ? 'Enveloppe 100% Répartie sur les Pôles de Travaux'
-                            : ('Dépassement Prévisionnel : -' . Format::currency(abs($travaux['unallocatedBudget'] ?? 0)))) ?>
-                  </strong>
-                  <div class="margin-banner-desc" id="trv-margin-banner-desc">
-                    <?= ($travaux['unallocatedBudget'] ?? 0) > 0 
-                        ? ('Il vous reste ' . Format::currency($travaux['unallocatedBudget'] ?? 0) . ' de marge disponible non encore affectée sur les 50 000 € (les pôles prévus mobilisent ' . Format::currency($travaux['totalAllocatedLots'] ?? 50000) . ').')
-                        : (($travaux['unallocatedBudget'] ?? 0) === 0.0 
-                            ? 'La totalité des 50 000,00 € est couverte par vos budgets de base prévus (36 885,15 € restants à décaisser sur les chantiers).'
-                            : ('Attention : la somme de vos budgets de base dépasse l\'enveloppe globale de ' . Format::currency(abs($travaux['unallocatedBudget'] ?? 0)) . '.')) ?>
-                  </div>
-                </div>
-              </div>
-              <div class="margin-banner-right">
-                <span class="badge-tag" id="trv-margin-badge" style="background:<?= ($travaux['unallocatedBudget'] ?? 0) >= 0 ? 'rgba(16,185,129,0.18)' : 'rgba(244,63,94,0.18)' ?>; color:<?= ($travaux['unallocatedBudget'] ?? 0) >= 0 ? '#34d399' : '#f43f5e' ?>; font-weight:700;">
-                  <?= ($travaux['unallocatedBudget'] ?? 0) > 0 ? 'Marge saine' : (($travaux['unallocatedBudget'] ?? 0) === 0.0 ? '100% alloué' : 'Dépassement') ?>
-                </span>
-              </div>
-            </div>
-
-            <!-- 4. Pôles de Travaux (Budgets Prévus) -->
-            <div class="trv-poles-pills mt-3" id="trv-poles-pills-wrap">
-              <?php 
-              $idx = 0;
-              foreach ($lots as $lot): 
-                  $color = $lotColors[$idx % count($lotColors)];
-                  $idx++;
-              ?>
-                <div class="trv-pole-pill">
-                  <span class="pole-dot" style="background-color: <?= htmlspecialchars($color) ?>;"></span>
-                  <span class="pole-icon"><?= htmlspecialchars($lot['icon'] ?? '🔨') ?></span>
-                  <div class="pole-info">
-                    <span class="pole-title"><?= htmlspecialchars($lot['name']) ?></span>
-                    <span class="pole-meta font-mono">
-                      <strong><?= Format::currency($lot['budget']) ?></strong> prévu (<?= htmlspecialchars((string)($lot['envelopePct'] ?? 0)) ?>%) • <?= Format::currency($lot['spent']) ?> payé
-                    </span>
-                  </div>
-                </div>
-              <?php endforeach; ?>
-            </div>
-
-            <!-- 5. Légende Avances Axel & Ariane -->
-            <div class="travaux-visual-legend mt-3">
+            <div class="travaux-visual-legend">
               <div class="legend-col">
                 <div class="legend-dot-label">
                   <span class="chip-dot dot-cyan"></span>
@@ -221,7 +108,7 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
               <div class="legend-col">
                 <div class="legend-dot-label">
                   <span class="chip-dot dot-emerald"></span>
-                  <strong>Solde Total Disponible</strong>
+                  <strong>Reste Disponible</strong>
                 </div>
                 <div class="legend-val text-emerald font-mono" id="trv-legend-rem-val"><?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?></div>
                 <span class="legend-pct" id="trv-legend-rem-pct"><?= $travaux['remainingPct'] ?? 73.77 ?>% du budget restant</span>
@@ -339,16 +226,8 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
           <!-- Quick Indicators Strip -->
           <div class="lots-kpi-strip mt-3 mb-4">
             <div class="lots-kpi-item">
-              <span class="lots-kpi-label">Fonds Dédié Global :</span>
+              <span class="lots-kpi-label">Budget de Base Total :</span>
               <strong class="lots-kpi-val text-cyan font-mono" id="lots-kpi-total-budget"><?= Format::currency($travaux['totalBudget'] ?? 50000) ?></strong>
-            </div>
-            <div class="lots-kpi-item">
-              <span class="lots-kpi-label">Budgets Lots Prévus :</span>
-              <strong class="lots-kpi-val font-mono" id="lots-kpi-lots-allocated" style="color:#e2e8f0;"><?= Format::currency($travaux['totalAllocatedLots'] ?? 50000) ?></strong>
-            </div>
-            <div class="lots-kpi-item">
-              <span class="lots-kpi-label">Réserve Non Allouée :</span>
-              <strong class="lots-kpi-val font-mono <?= ($travaux['unallocatedBudget'] ?? 0) >= 0 ? 'text-cyan' : 'text-rose' ?>" id="lots-kpi-unallocated"><?= (($travaux['unallocatedBudget'] ?? 0) >= 0 ? '+' : '') . Format::currency($travaux['unallocatedBudget'] ?? 0) ?></strong>
             </div>
             <div class="lots-kpi-item">
               <span class="lots-kpi-label">Total Dépensé Noté :</span>
@@ -356,7 +235,7 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
               <small class="lots-kpi-pct" id="lots-kpi-total-spent-pct">(<?= $travaux['spentPct'] ?? 26.2 ?>%)</small>
             </div>
             <div class="lots-kpi-item">
-              <span class="lots-kpi-label">Solde Global Restant :</span>
+              <span class="lots-kpi-label">Reste Disponible :</span>
               <strong class="lots-kpi-val text-emerald font-mono" id="lots-kpi-total-remaining"><?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?></strong>
               <small class="lots-kpi-pct" id="lots-kpi-total-rem-pct">(<?= $travaux['remainingPct'] ?? 73.8 ?>%)</small>
             </div>
@@ -421,83 +300,23 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
                 <?php endforeach; ?>
               </tbody>
               <tfoot id="travaux-lots-tfoot" class="travaux-lots-tfoot">
-                <!-- 1. Sous-total des lots répartis -->
-                <tr class="tfoot-row-subtotal">
+                <tr class="tfoot-lots-total">
                   <td colspan="2">
-                    <strong style="color:#e2e8f0;">SOUS-TOTAL DES LOTS BUDGÉTISÉS</strong>
-                    <div class="lot-subtext">Somme des budgets alloués aux chantiers prévus</div>
+                    <strong>TOTAL DU BUDGET TRAVAUX</strong>
                   </td>
-                  <td class="text-right font-mono" style="font-weight:700;" id="tfoot-lots-allocated"><?= Format::currency($travaux['totalAllocatedLots'] ?? 50000) ?></td>
-                  <td class="text-right font-mono text-amber" style="font-weight:700;" id="tfoot-lots-spent"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?></td>
+                  <td class="text-right font-mono" style="font-weight:800;" id="tfoot-lots-budget"><?= Format::currency($travaux['totalBudget'] ?? 50000) ?></td>
+                  <td class="text-right font-mono text-amber" style="font-weight:800;" id="tfoot-lots-spent"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?></td>
                   <td class="text-right font-mono text-cyan" id="tfoot-lots-axel"><?= Format::currency($travaux['totalAxel'] ?? 5302) ?></td>
                   <td class="text-right font-mono text-violet" id="tfoot-lots-ariane"><?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?></td>
-                  <td class="text-right font-mono <?= ($travaux['lotsRemaining'] ?? 36885.15) >= 0 ? 'text-emerald' : 'text-rose' ?>" style="font-weight:700;" id="tfoot-lots-subtotal-remaining">
-                    <?= (($travaux['lotsRemaining'] ?? 36885.15) >= 0 ? '+' : '') . Format::currency($travaux['lotsRemaining'] ?? 36885.15) ?>
-                  </td>
-                  <td>
-                    <div class="tfoot-progress-wrap">
-                      <div class="tfoot-progress-bar">
-                        <div class="tfoot-progress-fill" id="tfoot-lots-subtotal-fill" style="width: <?= min(100, $travaux['lotsSpentPct'] ?? 26.23) ?>%;"></div>
-                      </div>
-                      <span class="tfoot-progress-label font-mono" id="tfoot-lots-subtotal-progress-pct"><?= $travaux['lotsSpentPct'] ?? 26.2 ?>%</span>
-                    </div>
-                  </td>
-                  <td class="text-center">
-                    <span class="badge-subtle">Sous-total</span>
-                  </td>
-                </tr>
-
-                <!-- 2. Reliquat d'enveloppe non affecté / Réserve -->
-                <tr class="tfoot-row-unallocated">
-                  <td colspan="2">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                      <span style="font-size:1.05rem;">🛡️</span>
-                      <div>
-                        <strong>Réserve / Enveloppe non encore allouée</strong>
-                        <div class="lot-subtext" id="tfoot-unallocated-desc">Part du fonds dédié de <?= Format::currency($travaux['totalBudget'] ?? 50000) ?> non encore ventilée sur un lot</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="text-right font-mono text-cyan" id="tfoot-lots-unallocated">
-                    <?= (($travaux['unallocatedBudget'] ?? 0) >= 0 ? '+' : '') . Format::currency($travaux['unallocatedBudget'] ?? 0) ?>
-                  </td>
-                  <td class="text-right font-mono text-dim">—</td>
-                  <td class="text-right font-mono text-dim">—</td>
-                  <td class="text-right font-mono text-dim">—</td>
-                  <td class="text-right font-mono text-cyan" id="tfoot-lots-unallocated-rem">
-                    <?= (($travaux['unallocatedBudget'] ?? 0) >= 0 ? '+' : '') . Format::currency($travaux['unallocatedBudget'] ?? 0) ?>
-                  </td>
-                  <td>
-                    <span class="text-dim font-mono" style="font-size:0.78rem;">Non engagé</span>
-                  </td>
-                  <td class="text-center">
-                    <span class="badge-tag" id="tfoot-unallocated-badge" style="background:rgba(14,165,233,0.15); color:#38bdf8;">En réserve</span>
-                  </td>
-                </tr>
-
-                <!-- 3. Total général consolidé de l'enveloppe travaux -->
-                <tr class="tfoot-row-grand-total">
-                  <td colspan="2">
-                    <div>
-                      <strong style="color:#ffffff; font-size:0.95rem;">🎯 TOTAL GÉNÉRAL DU BUDGET TRAVAUX</strong>
-                      <div class="lot-subtext">Fonds dédié total (<?= Format::currency($travaux['totalBudget'] ?? 50000) ?>) • Contrôle consolidé</div>
-                    </div>
-                  </td>
-                  <td class="text-right font-mono" style="font-weight:800; color:#38bdf8;" id="tfoot-lots-budget"><?= Format::currency($travaux['totalBudget'] ?? 50000) ?></td>
-                  <td class="text-right font-mono text-amber" style="font-weight:800;" id="tfoot-lots-total-spent"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?></td>
-                  <td class="text-right font-mono text-cyan" id="tfoot-lots-total-axel"><?= Format::currency($travaux['totalAxel'] ?? 5302) ?></td>
-                  <td class="text-right font-mono text-violet" id="tfoot-lots-total-ariane"><?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?></td>
                   <td class="text-right font-mono text-emerald" style="font-weight:800;" id="tfoot-lots-remaining">+<?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?></td>
                   <td>
                     <div class="tfoot-progress-wrap">
-                      <div class="tfoot-progress-bar">
-                        <div class="tfoot-progress-fill" id="tfoot-lots-progress-fill" style="width: <?= $travaux['spentPct'] ?? 26.23 ?>%;"></div>
-                      </div>
-                      <span class="tfoot-progress-label font-mono" id="tfoot-lots-progress-pct"><?= $travaux['spentPct'] ?? 26.2 ?>%</span>
+                      <div class="tfoot-progress-fill" id="tfoot-lots-progress-fill" style="width: <?= min(100, (float)($travaux['spentPct'] ?? 26.2)) ?>%;"></div>
                     </div>
+                    <span class="tfoot-progress-label font-mono" id="tfoot-lots-progress-pct"><?= $travaux['spentPct'] ?? 26.2 ?>%</span>
                   </td>
                   <td class="text-center">
-                    <span class="badge-tag" style="background:rgba(16,185,129,0.18); color:#34d399; font-weight:700;">Solde sain</span>
+                    <span class="badge-tag" style="background:rgba(16,185,129,0.15); color:#34d399;">Solde sain</span>
                   </td>
                 </tr>
               </tfoot>

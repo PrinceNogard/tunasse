@@ -378,15 +378,6 @@ function updateLotsKpiStrip(m) {
     if (el) el.textContent = val;
   };
   setEl('lots-kpi-total-budget', formatCurrency(m.initialBudget));
-  setEl('lots-kpi-lots-allocated', formatCurrency(m.totalAllocatedLots || 0));
-
-  const unallocatedEl = document.getElementById('lots-kpi-unallocated');
-  if (unallocatedEl) {
-    const unallocated = m.unallocatedBudget !== undefined ? m.unallocatedBudget : (m.initialBudget - (m.totalAllocatedLots || 0));
-    unallocatedEl.textContent = `${unallocated >= 0 ? '+' : ''}${formatCurrency(unallocated)}`;
-    unallocatedEl.className = `lots-kpi-val font-mono ${unallocated >= 0 ? 'text-cyan' : 'text-rose'}`;
-  }
-
   setEl('lots-kpi-total-spent', formatCurrency(m.totalConsumed));
   setEl('lots-kpi-total-spent-pct', `(${m.percentageConsumed.toFixed(1)}%)`);
   setEl('lots-kpi-total-remaining', formatCurrency(m.remainingBudget));
@@ -458,57 +449,10 @@ function updateLotsTableFooter(m) {
     if (el) el.textContent = val;
   };
 
-  // 1. Sous-total des lots répartis
-  setEl('tfoot-lots-allocated', formatCurrency(m.totalAllocatedLots || 0));
+  setEl('tfoot-lots-budget', formatCurrency(m.initialBudget));
   setEl('tfoot-lots-spent', formatCurrency(m.totalConsumed));
   setEl('tfoot-lots-axel', formatCurrency(m.totalAxel));
   setEl('tfoot-lots-ariane', formatCurrency(m.totalAriane));
-
-  const subRem = document.getElementById('tfoot-lots-subtotal-remaining');
-  if (subRem) {
-    const lotsRem = m.lotsRemaining !== undefined ? m.lotsRemaining : ((m.totalAllocatedLots || 0) - m.totalConsumed);
-    const isNeg = lotsRem < 0;
-    subRem.textContent = `${isNeg ? '-' : '+'}${formatCurrency(Math.abs(lotsRem))}`;
-    subRem.className = `text-right font-mono ${isNeg ? 'text-rose' : 'text-emerald'}`;
-  }
-
-  const subFill = document.getElementById('tfoot-lots-subtotal-fill');
-  const lotsPct = m.lotsPercentageConsumed !== undefined ? m.lotsPercentageConsumed : ((m.totalAllocatedLots > 0 ? (m.totalConsumed / m.totalAllocatedLots) * 100 : 0));
-  if (subFill) subFill.style.width = `${Math.min(100, lotsPct).toFixed(2)}%`;
-  setEl('tfoot-lots-subtotal-progress-pct', `${lotsPct.toFixed(1)}%`);
-
-  // 2. Reliquat non affecté / Réserve
-  const unallocated = m.unallocatedBudget !== undefined ? m.unallocatedBudget : (m.initialBudget - (m.totalAllocatedLots || 0));
-  const unallocatedStr = `${unallocated >= 0 ? '+' : '-'}${formatCurrency(Math.abs(unallocated))}`;
-  setEl('tfoot-lots-unallocated', unallocatedStr);
-  setEl('tfoot-lots-unallocated-rem', unallocatedStr);
-
-  const unallocBadge = document.getElementById('tfoot-unallocated-badge');
-  const unallocDesc = document.getElementById('tfoot-unallocated-desc');
-  if (unallocBadge) {
-    if (unallocated >= 0) {
-      unallocBadge.textContent = 'En réserve';
-      unallocBadge.style.background = 'rgba(14,165,233,0.15)';
-      unallocBadge.style.color = '#38bdf8';
-    } else {
-      unallocBadge.textContent = 'Dépassement';
-      unallocBadge.style.background = 'rgba(244,63,94,0.15)';
-      unallocBadge.style.color = '#f43f5e';
-    }
-  }
-  if (unallocDesc) {
-    if (unallocated >= 0) {
-      unallocDesc.textContent = `Part du fonds dédié de ${formatCurrency(m.initialBudget)} non encore ventilée sur un lot`;
-    } else {
-      unallocDesc.textContent = `Les budgets des lots prévus dépassent le fonds dédié de ${formatCurrency(Math.abs(unallocated))}`;
-    }
-  }
-
-  // 3. Total général consolidé de l'enveloppe travaux
-  setEl('tfoot-lots-budget', formatCurrency(m.initialBudget));
-  setEl('tfoot-lots-total-spent', formatCurrency(m.totalConsumed));
-  setEl('tfoot-lots-total-axel', formatCurrency(m.totalAxel));
-  setEl('tfoot-lots-total-ariane', formatCurrency(m.totalAriane));
 
   const footRem = document.getElementById('tfoot-lots-remaining');
   if (footRem) {
@@ -768,133 +712,13 @@ function renderTravauxKpiAndBars(m) {
 
   setEl('trv-visual-status', `${formatCurrency(m.totalConsumed)} consommés • ${formatCurrency(m.remainingBudget)} disponibles`);
 
-  const marginQuickEl = document.getElementById('trv-visual-margin-quick');
-  if (marginQuickEl) {
-    const unallocated = m.unallocatedBudget !== undefined ? m.unallocatedBudget : (m.initialBudget - (m.totalAllocatedLots || 0));
-    if (unallocated >= 0) {
-      marginQuickEl.textContent = `Marge libre non allouée : +${formatCurrency(unallocated)}`;
-      marginQuickEl.style.color = '#38bdf8';
-    } else {
-      marginQuickEl.textContent = `Dépassement prévisionnel : -${formatCurrency(Math.abs(unallocated))}`;
-      marginQuickEl.style.color = '#f43f5e';
-    }
-  }
-
-  // 1. Barre A : Ventilation Prévisionnelle par Pôle de Travaux (Budgets Prévus)
-  const polesAllocated = m.totalAllocatedLots || 0;
-  const polesPctOfEnv = m.initialBudget > 0 ? ((polesAllocated / m.initialBudget) * 100).toFixed(1) : 0;
-  setEl('trv-poles-bar-summary', `${formatCurrency(polesAllocated)} alloués sur ${formatCurrency(m.initialBudget)} (${Math.min(100, polesPctOfEnv)}%)`);
-
-  const polesBar = document.getElementById('trv-poles-bar');
-  if (polesBar) {
-    polesBar.innerHTML = '';
-    const lotColors = ['#0ea5e9', '#f97316', '#10b981', '#8b5cf6', '#f59e0b', '#14b8a6', '#6366f1', '#ec4899', '#64748b'];
-    let idx = 0;
-    for (const lot of (m.lots || [])) {
-      const color = lotColors[idx % lotColors.length];
-      idx++;
-      const w = lot.envelopePct !== undefined ? lot.envelopePct : (m.initialBudget > 0 ? ((lot.allocatedBudget / m.initialBudget) * 100).toFixed(1) : 0);
-      const seg = document.createElement('div');
-      seg.className = 'trv-segment-pole';
-      seg.dataset.lotId = lot.id;
-      seg.style.width = `${w}%`;
-      seg.style.backgroundColor = color;
-      seg.title = `${lot.name} • Budget Prévu : ${formatCurrency(lot.allocatedBudget)} (${w}% de l'enveloppe) • Dépensé : ${formatCurrency(lot.totalSpent || 0)}`;
-      seg.innerHTML = `<span class="segment-inner-icon">${lot.icon || '🔨'}</span>`;
-      polesBar.appendChild(seg);
-    }
-    const unallocated = m.unallocatedBudget !== undefined ? m.unallocatedBudget : (m.initialBudget - polesAllocated);
-    if (unallocated > 0.005) {
-      const freeSeg = document.createElement('div');
-      freeSeg.className = 'travaux-bar-segment segment-free-margin';
-      freeSeg.id = 'trv-bar-unallocated';
-      const freePct = (m.marginPct !== undefined ? m.marginPct : ((unallocated / m.initialBudget) * 100)).toFixed(1);
-      freeSeg.style.width = `${freePct}%`;
-      freeSeg.title = `Marge libre non allouée : +${formatCurrency(unallocated)} (${freePct}%)`;
-      polesBar.appendChild(freeSeg);
-    }
-  }
-
-  // 2. Barre B : Progression Globale (Réalisé vs Prévu restant vs Marge Libre)
-  const pendingPlanned = m.pendingPlannedBudget !== undefined ? m.pendingPlannedBudget : Math.max(0, (m.totalAllocatedLots || 0) - m.totalConsumed);
-  setEl('trv-spent-vs-planned-summary', `${formatCurrency(m.totalConsumed)} payés • ${formatCurrency(pendingPlanned)} prévus à venir`);
-
   const barAxel = document.getElementById('trv-bar-axel');
   const barAriane = document.getElementById('trv-bar-ariane');
-  const barPlanned = document.getElementById('trv-bar-planned-pending');
-  const barMarginFree = document.getElementById('trv-bar-margin-free');
   const barRem = document.getElementById('trv-bar-remaining');
 
   if (barAxel) barAxel.style.width = `${m.axelBudgetPct.toFixed(2)}%`;
   if (barAriane) barAriane.style.width = `${m.arianeBudgetPct.toFixed(2)}%`;
-  if (barPlanned) {
-    const plannedPct = m.pendingPlannedPct !== undefined ? m.pendingPlannedPct : (m.initialBudget > 0 ? (pendingPlanned / m.initialBudget) * 100 : 0);
-    barPlanned.style.width = `${plannedPct.toFixed(2)}%`;
-  }
-  if (barMarginFree) {
-    const freePct = m.marginPct !== undefined ? m.marginPct : (m.initialBudget > 0 ? (Math.max(0, m.unallocatedBudget) / m.initialBudget) * 100 : 0);
-    barMarginFree.style.width = `${freePct.toFixed(2)}%`;
-  }
   if (barRem) barRem.style.width = `${Math.max(0, m.remainingBudgetPct).toFixed(2)}%`;
-
-  // 3. Encadré d'Alerte / Contrôle de la Marge Restante
-  const marginTitleEl = document.getElementById('trv-margin-banner-title');
-  const marginDescEl = document.getElementById('trv-margin-banner-desc');
-  const marginBadgeEl = document.getElementById('trv-margin-badge');
-  const unallocVal = m.unallocatedBudget !== undefined ? m.unallocatedBudget : (m.initialBudget - (m.totalAllocatedLots || 0));
-
-  if (unallocVal > 0.005) {
-    if (marginTitleEl) marginTitleEl.textContent = `Marge Libre Restante sur l'Enveloppe : +${formatCurrency(unallocVal)}`;
-    if (marginDescEl) marginDescEl.textContent = `Il vous reste ${formatCurrency(unallocVal)} de marge disponible non encore affectée sur les 50 000 € (les ${(m.lots || []).length} pôles prévus mobilisent ${formatCurrency(m.totalAllocatedLots || 0)}).`;
-    if (marginBadgeEl) {
-      marginBadgeEl.textContent = 'Marge saine';
-      marginBadgeEl.style.background = 'rgba(16,185,129,0.18)';
-      marginBadgeEl.style.color = '#34d399';
-    }
-  } else if (Math.abs(unallocVal) <= 0.005) {
-    if (marginTitleEl) marginTitleEl.textContent = `Enveloppe 100% Répartie sur les Pôles de Travaux`;
-    if (marginDescEl) marginDescEl.textContent = `La totalité des ${formatCurrency(m.initialBudget)} est couverte par vos budgets de base prévus (${formatCurrency(m.remainingBudget)} restants à décaisser sur les chantiers).`;
-    if (marginBadgeEl) {
-      marginBadgeEl.textContent = '100% alloué';
-      marginBadgeEl.style.background = 'rgba(14,165,233,0.18)';
-      marginBadgeEl.style.color = '#38bdf8';
-    }
-  } else {
-    const overAmount = Math.abs(unallocVal);
-    if (marginTitleEl) marginTitleEl.textContent = `Dépassement Prévisionnel : -${formatCurrency(overAmount)}`;
-    if (marginDescEl) marginDescEl.textContent = `Attention : la somme de vos budgets de base dépasse l'enveloppe globale de ${formatCurrency(overAmount)}.`;
-    if (marginBadgeEl) {
-      marginBadgeEl.textContent = 'Dépassement';
-      marginBadgeEl.style.background = 'rgba(244,63,94,0.18)';
-      marginBadgeEl.style.color = '#f43f5e';
-    }
-  }
-
-  // 4. Pôles de Travaux (Budgets Prévus) Pills
-  const pillsWrap = document.getElementById('trv-poles-pills-wrap');
-  if (pillsWrap) {
-    pillsWrap.innerHTML = '';
-    const lotColors = ['#0ea5e9', '#f97316', '#10b981', '#8b5cf6', '#f59e0b', '#14b8a6', '#6366f1', '#ec4899', '#64748b'];
-    let idx = 0;
-    for (const lot of (m.lots || [])) {
-      const color = lotColors[idx % lotColors.length];
-      idx++;
-      const w = lot.envelopePct !== undefined ? lot.envelopePct : (m.initialBudget > 0 ? ((lot.allocatedBudget / m.initialBudget) * 100).toFixed(1) : 0);
-      const pill = document.createElement('div');
-      pill.className = 'trv-pole-pill';
-      pill.innerHTML = `
-        <span class="pole-dot" style="background-color: ${color};"></span>
-        <span class="pole-icon">${lot.icon || '🔨'}</span>
-        <div class="pole-info">
-          <span class="pole-title">${lot.name}</span>
-          <span class="pole-meta font-mono">
-            <strong>${formatCurrency(lot.allocatedBudget)}</strong> prévu (${w}%) • ${formatCurrency(lot.totalSpent || 0)} payé
-          </span>
-        </div>
-      `;
-      pillsWrap.appendChild(pill);
-    }
-  }
 
   setEl('trv-legend-axel-val', formatCurrency(m.totalAxel));
   setEl('trv-legend-axel-pct', `${m.axelShareOfConsumed.toFixed(1)}% du consommé • ${m.axelBudgetPct.toFixed(1)}% du budget`);

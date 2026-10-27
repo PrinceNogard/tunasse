@@ -2312,157 +2312,7 @@ body {
   border-left: 1px solid rgba(16, 185, 129, 0.25);
 }
 
-.segment-planned-pending {
-  background: repeating-linear-gradient(45deg, rgba(99, 102, 241, 0.25), rgba(99, 102, 241, 0.25) 8px, rgba(99, 102, 241, 0.12) 8px, rgba(99, 102, 241, 0.12) 16px);
-  border-left: 1px solid rgba(99, 102, 241, 0.4);
-}
 
-.segment-free-margin {
-  background: rgba(16, 185, 129, 0.28);
-  border-left: 1px dashed rgba(16, 185, 129, 0.6);
-}
-
-.visual-bar-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.visual-bar-label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.79rem;
-}
-
-.visual-bar-label {
-  color: var(--text-main);
-}
-
-.visual-bar-sublabel {
-  font-size: 0.74rem;
-  color: var(--text-muted);
-}
-
-.trv-poles-progress-bar {
-  display: flex;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  position: relative;
-}
-
-.trv-segment-pole {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  transition: width 0.4s ease, filter 0.2s ease;
-  cursor: pointer;
-  border-right: 1px solid rgba(15, 23, 42, 0.4);
-}
-
-.trv-segment-pole:hover {
-  filter: brightness(1.2);
-  z-index: 2;
-}
-
-.segment-inner-icon {
-  font-size: 0.68rem;
-  line-height: 1;
-  pointer-events: none;
-  opacity: 0.9;
-}
-
-/* Margin Status Banner */
-.trv-margin-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
-}
-
-.margin-banner-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.margin-banner-icon {
-  font-size: 1.25rem;
-  line-height: 1;
-}
-
-.margin-banner-title {
-  display: block;
-  font-size: 0.88rem;
-  color: #ffffff;
-}
-
-.margin-banner-desc {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-/* Poles Pills */
-.trv-poles-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.trv-pole-pill {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: rgba(30, 41, 59, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 8px;
-  padding: 5px 9px;
-  font-size: 0.76rem;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.trv-pole-pill:hover {
-  background: rgba(30, 41, 59, 0.85);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.pole-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
-}
-
-.pole-icon {
-  font-size: 0.82rem;
-  line-height: 1;
-}
-
-.pole-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.pole-title {
-  color: #ffffff;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.pole-meta {
-  font-size: 0.70rem;
-  color: var(--text-dim);
-}
 
 .travaux-visual-legend {
   display: grid;
@@ -3036,27 +2886,10 @@ body {
 
 /* Tfoot in Lots Table */
 .travaux-lots-tfoot tr td {
-  padding: 12px 16px;
-  font-size: 0.88rem;
-}
-
-.travaux-lots-tfoot .tfoot-row-subtotal td {
-  background: rgba(30, 41, 59, 0.7);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.14);
-  font-weight: 600;
-}
-
-.travaux-lots-tfoot .tfoot-row-unallocated td {
-  background: rgba(14, 165, 233, 0.04);
-  border-top: 1px dashed rgba(14, 165, 233, 0.2);
-  color: var(--text-muted);
-}
-
-.travaux-lots-tfoot .tfoot-row-grand-total td {
-  background: rgba(15, 23, 42, 0.95);
-  border-top: 2px solid rgba(56, 189, 248, 0.45);
-  font-size: 0.94rem;
-  font-weight: 700;
+  padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.85);
+  border-top: 2px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.92rem;
 }
 
 .tfoot-progress-wrap {
