@@ -36,8 +36,11 @@ import {
 
 let appState = loadState(STORAGE_KEY, DEFAULT_STATE);
 let saveTimeout = null;
+let isUserModified = false;
+let isHydratedFromServer = (typeof window !== 'undefined' && !!window.__INITIAL_STATE__);
 
 function syncBackend() {
+  if (!isUserModified || !isHydratedFromServer) return;
   if (typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
     fetch('api.php?action=import_json', {
       method: 'POST',
@@ -48,6 +51,7 @@ function syncBackend() {
 }
 
 function saveStateDebounced() {
+  isUserModified = true;
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
     saveStateImmediate();
@@ -55,6 +59,7 @@ function saveStateDebounced() {
 }
 
 function saveStateImmediate() {
+  isUserModified = true;
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
@@ -1463,6 +1468,19 @@ function closeLotModal() {
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
   renderAll();
+
+  if (!isHydratedFromServer && typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
+    fetch('api.php?action=get_state')
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.success && data.state) {
+          appState = validateAndMigrateState(data.state, DEFAULT_STATE);
+          isHydratedFromServer = true;
+          renderAll();
+        }
+      })
+      .catch(() => {});
+  }
 
   // Navigation Tabs
   document.querySelectorAll('.nav-tab').forEach(tabBtn => {

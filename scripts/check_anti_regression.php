@@ -70,15 +70,17 @@ foreach ($filesToCheck as $file) {
 }
 
 // 4. Verify State Integrity
-$statePath = $baseDir . '/data/app_state.json';
+$statePath = file_exists($baseDir . '/data/app_state.json')
+    ? $baseDir . '/data/app_state.json'
+    : $baseDir . '/data/app_state.json.dist';
 if (file_exists($statePath)) {
     $rawState = file_get_contents($statePath);
     $json = json_decode($rawState, true);
     if (!is_array($json)) {
-        $errors[] = "State Integrity Error: data/app_state.json is not valid JSON.";
+        $errors[] = "State Integrity Error: $statePath is not valid JSON.";
     } else {
         if (!isset($json['profiles']) || count($json['profiles']) < 2) {
-            $errors[] = "State Integrity Error: profiles missing or < 2 in data/app_state.json.";
+            $errors[] = "State Integrity Error: profiles missing or < 2 in state.";
         }
         if (!isset($json['travauxFund']['initialBudget'])) {
             $errors[] = "State Integrity Error: travauxFund.initialBudget missing.";

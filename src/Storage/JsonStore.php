@@ -6,10 +6,14 @@ namespace Tunasse\Storage;
 class JsonStore
 {
     private string $filePath;
+    private string $distPath;
+    private string $backupDir;
 
     public function __construct(?string $filePath = null)
     {
         $this->filePath = $filePath ?? (__DIR__ . '/../../data/app_state.json');
+        $this->distPath = __DIR__ . '/../../data/app_state.json.dist';
+        $this->backupDir = dirname($this->filePath) . '/backups';
     }
 
     public static function getDefaultState(): array
@@ -305,37 +309,89 @@ class JsonStore
     public function load(): array
     {
         if (!file_exists($this->filePath)) {
+            if (file_exists($this->distPath)) {
+                $distContent = @file_get_contents($this->distPath);
+                $decoded = json_decode((string)$distContent, true);
+                if (is_array($decoded)) {
+                    $this->save($decoded, false);
+                    return $this->migrate($decoded);
+                }
+            }
             $default = self::getDefaultState();
-            $this->save($default);
+            $this->save($default, false);
             return $default;
         }
 
         $content = @file_get_contents($this->filePath);
         if ($content === false || trim($content) === '') {
             $default = self::getDefaultState();
-            $this->save($default);
+            $this->save($default, false);
             return $default;
         }
 
         $decoded = json_decode($content, true);
         if (!is_array($decoded)) {
             $default = self::getDefaultState();
-            $this->save($default);
+            $this->save($default, false);
             return $default;
         }
 
         return $this->migrate($decoded);
     }
 
-    public function save(array $state): bool
+    public function save(array $state, bool $createBackup = true): bool
     {
         $dir = dirname($this->filePath);
         if (!is_dir($dir)) {
             @mkdir($dir, 0777, true);
         }
 
+        if ($createBackup && file_exists($this->filePath) && filesize($this->filePath) > 0) {
+            $this->createBackup();
+        }
+
         $json = json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         return @file_put_contents($this->filePath, $json, LOCK_EX) !== false;
+    }
+
+    private function createBackup(): void
+    {
+        try {
+            if (!is_dir($this->backupDir)) {
+                @mkdir($this->backupDir, 0777, true);
+            }
+            $timestamp = date('Y-m-d_His');
+            $backupFile = $this->backupDir . "/app_state_{$timestamp}.json";
+            @copy($this->filePath, $backupFile);
+
+            $backups = glob($this->backupDir . '/app_state_*.json');
+            if (is_array($backups) && count($backups) > 20) {
+                usort($backups, fn($a, $b) => filemtime($a) <=> filemtime($b));
+                while (count($backups) > 20) {
+                    $oldest = array_shift($backups);
+                    @unlink($oldest);
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('JsonStore backup error: ' . $e->getMessage());
+        }
+    }
+
+    public function listBackups(): array
+    {
+        if (!is_dir($this->backupDir)) {
+            return [];
+        }
+        $files = glob($this->backupDir . '/app_state_*.json') ?: [];
+        rsort($files);
+        return array_map(function ($f) {
+            return [
+                'filename' => basename($f),
+                'path' => $f,
+                'size' => filesize($f),
+                'date' => date('Y-m-d H:i:s', filemtime($f))
+            ];
+        }, $files);
     }
 
     public function reset(): array

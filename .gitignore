@@ -6,3 +6,10 @@ Thumbs.db
 out.html
 test_*.html
 *.png
+
+# Environment-specific application state & backups
+/data/app_state.json
+/data/backups/
+/data/*.bak
+/data/*_backup.json
+/data/*.server_live.json

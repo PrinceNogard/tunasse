@@ -153,7 +153,14 @@ $loaded['splitRule'] = 'income';
 $store->save($loaded);
 $reloaded = $store->load();
 MiniAssert::same('income', $reloaded['splitRule'], 'JsonStore persistence verified');
+
+// Test automatic rolling backup on overwrite
+$loaded['splitRule'] = '50';
+$store->save($loaded);
+$backups = $store->listBackups();
+MiniAssert::true(count($backups) >= 1, 'JsonStore creates automated rolling backup on save');
 @unlink($testStorePath);
+foreach ($backups as $b) { @unlink($b['path']); }
 
 // 7. Automated Banking (GoCardless Client) Tests
 echo "\n▶ Automated Banking (GoCardless DSP2) Tests:\n";
