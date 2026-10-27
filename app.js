@@ -382,11 +382,16 @@ function updateLotsKpiStrip(m) {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
   };
-  setEl('lots-kpi-total-budget', formatCurrency(m.initialBudget));
+  const totalAlloc = m.totalAllocatedLots != null ? m.totalAllocatedLots : m.initialBudget;
+  const rem = m.lotsRemaining != null ? m.lotsRemaining : m.remainingBudget;
+  const pct = m.lotsSpentPct != null ? m.lotsSpentPct : (m.lotsPercentageConsumed != null ? m.lotsPercentageConsumed : m.percentageConsumed);
+  const remPct = m.lotsRemainingPct != null ? m.lotsRemainingPct : m.percentageRemaining;
+
+  setEl('lots-kpi-total-budget', formatCurrency(totalAlloc));
   setEl('lots-kpi-total-spent', formatCurrency(m.totalConsumed));
-  setEl('lots-kpi-total-spent-pct', `(${m.percentageConsumed.toFixed(1)}%)`);
-  setEl('lots-kpi-total-remaining', formatCurrency(m.remainingBudget));
-  setEl('lots-kpi-total-rem-pct', `(${m.percentageRemaining.toFixed(1)}%)`);
+  setEl('lots-kpi-total-spent-pct', `(${pct.toFixed(1)}%)`);
+  setEl('lots-kpi-total-remaining', formatCurrency(rem));
+  setEl('lots-kpi-total-rem-pct', `(${remPct.toFixed(1)}%)`);
   setEl('lots-kpi-axel', formatCurrency(m.totalAxel));
   setEl('lots-kpi-ariane', formatCurrency(m.totalAriane));
 }
@@ -394,6 +399,7 @@ function updateLotsKpiStrip(m) {
 function createLotRowElement(lot) {
   const tr = document.createElement('tr');
   tr.className = 'lot-row';
+  tr.dataset.lotId = lot.id;
 
   const { label: statusLabel, cssClass: statusClass } = getLotStatusConfig(lot.status);
   const remainingHtml = getLotRemainingHtml(lot.remaining, lot.allocatedBudget);
@@ -413,8 +419,13 @@ function createLotRowElement(lot) {
     <td class="text-center">
       <span class="lot-status-pill ${statusClass}">${statusLabel}</span>
     </td>
-    <td class="text-right font-mono" style="font-weight: 700;">${formatCurrency(lot.allocatedBudget)}</td>
-    <td class="text-right font-mono ${lot.totalSpent > 0 ? 'text-amber' : 'text-dim'}" style="font-weight: 700;">
+    <td class="text-right">
+      <div style="display:inline-flex; align-items:center; gap:4px; justify-content:flex-end;">
+        <input type="number" step="100" min="0" class="input-lot-budget font-mono" data-id="${lot.id}" value="${lot.allocatedBudget}" aria-label="Budget de base pour ${lot.name}">
+        <span class="text-dim">€</span>
+      </div>
+    </td>
+    <td class="text-right font-mono ${lot.totalSpent > 0 ? 'text-amber' : 'text-dim'} lot-spent-cell" style="font-weight: 700;">
       ${lot.totalSpent > 0 ? formatCurrency(lot.totalSpent) : '—'}
     </td>
     <td class="text-right font-mono text-cyan" style="font-weight: 600;">
@@ -423,13 +434,13 @@ function createLotRowElement(lot) {
     <td class="text-right font-mono text-violet" style="font-weight: 600;">
       ${lot.spentAriane > 0 ? formatCurrency(lot.spentAriane) : '—'}
     </td>
-    <td class="text-right">${remainingHtml}</td>
-    <td>
-      <div class="lot-progress-cell">
-        <div class="lot-progress-bar">
-          <div class="lot-progress-fill" style="width: ${clampedPct.toFixed(1)}%; background-color: ${barColor};"></div>
+    <td class="text-right lot-rem-cell font-mono">${remainingHtml}</td>
+    <td class="lot-progress-cell">
+      <div class="tfoot-progress-wrap">
+        <div class="tfoot-progress-bar">
+          <div class="tfoot-progress-fill lot-progress-fill" style="width: ${clampedPct.toFixed(1)}%; background-color: ${barColor};"></div>
         </div>
-        <span class="lot-progress-label ${lot.isOverBudget ? 'text-rose' : ''}">
+        <span class="tfoot-progress-label lot-progress-label font-mono ${lot.isOverBudget ? 'text-rose' : ''}">
           ${lot.percentConsumed.toFixed(1)}%
         </span>
       </div>
@@ -454,21 +465,42 @@ function updateLotsTableFooter(m) {
     if (el) el.textContent = val;
   };
 
-  setEl('tfoot-lots-budget', formatCurrency(m.initialBudget));
+  const totalAlloc = m.totalAllocatedLots != null ? m.totalAllocatedLots : m.initialBudget;
+  const rem = m.lotsRemaining != null ? m.lotsRemaining : m.remainingBudget;
+  const pct = m.lotsSpentPct != null ? m.lotsSpentPct : (m.lotsPercentageConsumed != null ? m.lotsPercentageConsumed : m.percentageConsumed);
+
+  setEl('tfoot-lots-budget', formatCurrency(totalAlloc));
   setEl('tfoot-lots-spent', formatCurrency(m.totalConsumed));
   setEl('tfoot-lots-axel', formatCurrency(m.totalAxel));
   setEl('tfoot-lots-ariane', formatCurrency(m.totalAriane));
 
   const footRem = document.getElementById('tfoot-lots-remaining');
   if (footRem) {
-    const isNeg = m.remainingBudget < 0;
-    footRem.textContent = `${isNeg ? '-' : '+'}${formatCurrency(Math.abs(m.remainingBudget))}`;
+    const isNeg = rem < 0;
+    footRem.textContent = `${isNeg ? '-' : '+'}${formatCurrency(Math.abs(rem))}`;
     footRem.className = `text-right font-mono ${isNeg ? 'text-rose' : 'text-emerald'}`;
   }
 
   const footFill = document.getElementById('tfoot-lots-progress-fill');
-  if (footFill) footFill.style.width = `${Math.min(100, m.percentageConsumed).toFixed(2)}%`;
-  setEl('tfoot-lots-progress-pct', `${m.percentageConsumed.toFixed(1)}%`);
+  if (footFill) footFill.style.width = `${Math.min(100, pct).toFixed(2)}%`;
+  setEl('tfoot-lots-progress-pct', `${pct.toFixed(1)}%`);
+
+  const statusBadge = document.getElementById('tfoot-lots-status-badge');
+  if (statusBadge) {
+    if (m.isOverAllocated) {
+      statusBadge.textContent = `Dépassement (+${formatCurrency(m.overAllocatedAmount)})`;
+      statusBadge.style.background = 'rgba(244,63,94,0.15)';
+      statusBadge.style.color = '#f43f5e';
+    } else if (m.unallocatedBudget > 0) {
+      statusBadge.textContent = `Réserve ${formatCurrency(m.unallocatedBudget)}`;
+      statusBadge.style.background = 'rgba(56,189,248,0.15)';
+      statusBadge.style.color = '#38bdf8';
+    } else {
+      statusBadge.textContent = 'Équilibré (50k)';
+      statusBadge.style.background = 'rgba(16,185,129,0.15)';
+      statusBadge.style.color = '#34d399';
+    }
+  }
 }
 
 function renderTravauxLotsTable(m) {
@@ -1568,6 +1600,43 @@ document.addEventListener('DOMContentLoaded', () => {
         setEl('revolut-envelopes-p2-total', formatCurrency(data.revolutBudgetTotal / 2));
       }
     }
+    if (e.target.classList.contains('input-lot-budget')) {
+      const lotId = e.target.dataset.id;
+      const val = parseFloat(e.target.value) || 0;
+      const lot = (appState.travauxFund?.lots || []).find(x => x.id === lotId);
+      if (lot) {
+        lot.allocatedBudget = val;
+        saveStateDebounced();
+        const m = calculateTravauxMetrics(appState.travauxFund, appState.profiles, appState.splitRule);
+        const row = e.target.closest('tr');
+        if (row) {
+          const lotStat = (m.lots || []).find(l => l.id === lotId) || {
+            remaining: val - (lot.totalSpent || 0),
+            percentConsumed: val > 0 ? ((lot.totalSpent || 0) / val) * 100 : 0,
+            isOverBudget: (lot.totalSpent || 0) > val,
+            allocatedBudget: val
+          };
+          const remCell = row.querySelector('.lot-rem-cell');
+          if (remCell) remCell.innerHTML = getLotRemainingHtml(lotStat.remaining, val);
+          const { barColor, clampedPct } = getLotProgressBarConfig(lotStat.percentConsumed, lotStat.isOverBudget);
+          const fill = row.querySelector('.lot-progress-fill');
+          if (fill) {
+            fill.style.width = `${clampedPct.toFixed(1)}%`;
+            fill.style.backgroundColor = barColor;
+          }
+          const pctLabel = row.querySelector('.lot-progress-label');
+          if (pctLabel) {
+            pctLabel.textContent = `${lotStat.percentConsumed.toFixed(1)}%`;
+            pctLabel.className = `lot-progress-label font-mono ${lotStat.isOverBudget ? 'text-rose' : ''}`;
+          }
+        }
+        updateLotsKpiStrip(m);
+        updateLotsTableFooter(m);
+        renderTravauxKpiAndBars(m);
+        renderTravauxSettlement(m);
+        renderTravauxDashboardWidget(m);
+      }
+    }
     if (e.target.classList.contains('profile-name-input')) {
       const p = appState.profiles.find(x => x.id === e.target.dataset.id);
       if (p) {
@@ -1587,7 +1656,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('change', (e) => {
-    if (e.target.classList.contains('transfer-input') || e.target.classList.contains('input-env-budget')) {
+    if (e.target.classList.contains('transfer-input') || e.target.classList.contains('input-env-budget') || e.target.classList.contains('input-lot-budget')) {
       saveStateImmediate();
       if (e.target.classList.contains('input-env-budget')) renderAll();
     }

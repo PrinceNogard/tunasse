@@ -227,17 +227,17 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
           <div class="lots-kpi-strip mt-3 mb-4">
             <div class="lots-kpi-item">
               <span class="lots-kpi-label">Budget de Base Total :</span>
-              <strong class="lots-kpi-val text-cyan font-mono" id="lots-kpi-total-budget"><?= Format::currency($travaux['totalBudget'] ?? 50000) ?></strong>
+              <strong class="lots-kpi-val text-cyan font-mono" id="lots-kpi-total-budget"><?= Format::currency($travaux['totalAllocatedLots'] ?? $travaux['totalBudget'] ?? 50000) ?></strong>
             </div>
             <div class="lots-kpi-item">
               <span class="lots-kpi-label">Total Dépensé Noté :</span>
               <strong class="lots-kpi-val text-amber font-mono" id="lots-kpi-total-spent"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?></strong>
-              <small class="lots-kpi-pct" id="lots-kpi-total-spent-pct">(<?= $travaux['spentPct'] ?? 26.2 ?>%)</small>
+              <small class="lots-kpi-pct" id="lots-kpi-total-spent-pct">(<?= $travaux['lotsSpentPct'] ?? $travaux['spentPct'] ?? 26.2 ?>%)</small>
             </div>
             <div class="lots-kpi-item">
               <span class="lots-kpi-label">Reste Disponible :</span>
-              <strong class="lots-kpi-val text-emerald font-mono" id="lots-kpi-total-remaining"><?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?></strong>
-              <small class="lots-kpi-pct" id="lots-kpi-total-rem-pct">(<?= $travaux['remainingPct'] ?? 73.8 ?>%)</small>
+              <strong class="lots-kpi-val text-emerald font-mono" id="lots-kpi-total-remaining"><?= Format::currency($travaux['lotsRemaining'] ?? $travaux['remainingBudget'] ?? 36885.15) ?></strong>
+              <small class="lots-kpi-pct" id="lots-kpi-total-rem-pct">(<?= $travaux['lotsRemainingPct'] ?? $travaux['remainingPct'] ?? 73.8 ?>%)</small>
             </div>
             <div class="lots-kpi-item">
               <span class="lots-kpi-label">Avances <?= htmlspecialchars($p1['name']) ?> / <?= htmlspecialchars($p2['name']) ?> :</span>
@@ -277,19 +277,24 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
                     <td class="text-center">
                       <span class="badge-subtle"><?= htmlspecialchars($lot['status'] ?? 'ongoing') ?></span>
                     </td>
-                    <td class="text-right font-mono"><?= Format::currency($lot['budget']) ?></td>
-                    <td class="text-right font-mono font-bold text-amber"><?= Format::currency($lot['spent']) ?></td>
+                    <td class="text-right">
+                      <div style="display:inline-flex; align-items:center; gap:4px; justify-content:flex-end;">
+                        <input type="number" step="100" min="0" class="input-lot-budget font-mono" data-id="<?= htmlspecialchars($lot['id']) ?>" value="<?= (float)$lot['budget'] ?>" aria-label="Budget de base pour <?= htmlspecialchars($lot['name']) ?>">
+                        <span class="text-dim">€</span>
+                      </div>
+                    </td>
+                    <td class="text-right font-mono font-bold text-amber lot-spent-cell"><?= Format::currency($lot['spent']) ?></td>
                     <td class="text-right font-mono text-cyan"><?= Format::currency($lot['axel']) ?></td>
                     <td class="text-right font-mono text-violet"><?= Format::currency($lot['ariane']) ?></td>
-                    <td class="text-right font-mono <?= $lot['remaining'] >= 0 ? 'text-emerald' : 'text-rose' ?>">
+                    <td class="text-right font-mono lot-rem-cell <?= $lot['remaining'] >= 0 ? 'text-emerald' : 'text-rose' ?>">
                       <?= ($lot['remaining'] >= 0 ? '+' : '') . Format::currency($lot['remaining']) ?>
                     </td>
-                    <td>
+                    <td class="lot-progress-cell">
                       <div class="tfoot-progress-wrap">
                         <div class="tfoot-progress-bar">
-                          <div class="tfoot-progress-fill" style="width: <?= min(100, (float)$lot['pct']) ?>%;"></div>
+                          <div class="tfoot-progress-fill lot-progress-fill" style="width: <?= min(100, (float)$lot['pct']) ?>%;"></div>
                         </div>
-                        <span class="tfoot-progress-label font-mono"><?= $lot['pct'] ?>%</span>
+                        <span class="tfoot-progress-label lot-progress-label font-mono <?= ($lot['isOverBudget'] ?? false) ? 'text-rose' : '' ?>"><?= $lot['pct'] ?>%</span>
                       </div>
                     </td>
                     <td class="text-center">
@@ -304,19 +309,19 @@ $reimbursedCount = count(array_filter($travauxItems, fn($it) => !empty($it['reim
                   <td colspan="2">
                     <strong>TOTAL DU BUDGET TRAVAUX</strong>
                   </td>
-                  <td class="text-right font-mono" style="font-weight:800;" id="tfoot-lots-budget"><?= Format::currency($travaux['totalBudget'] ?? 50000) ?></td>
+                  <td class="text-right font-mono" style="font-weight:800;" id="tfoot-lots-budget"><?= Format::currency($travaux['totalAllocatedLots'] ?? $travaux['totalBudget'] ?? 50000) ?></td>
                   <td class="text-right font-mono text-amber" style="font-weight:800;" id="tfoot-lots-spent"><?= Format::currency($travaux['totalSpent'] ?? 13114.85) ?></td>
                   <td class="text-right font-mono text-cyan" id="tfoot-lots-axel"><?= Format::currency($travaux['totalAxel'] ?? 5302) ?></td>
                   <td class="text-right font-mono text-violet" id="tfoot-lots-ariane"><?= Format::currency($travaux['totalAriane'] ?? 7812.85) ?></td>
-                  <td class="text-right font-mono text-emerald" style="font-weight:800;" id="tfoot-lots-remaining">+<?= Format::currency($travaux['remainingBudget'] ?? 36885.15) ?></td>
+                  <td class="text-right font-mono <?= ($travaux['lotsRemaining'] ?? $travaux['remainingBudget'] ?? 0) >= 0 ? 'text-emerald' : 'text-rose' ?>" style="font-weight:800;" id="tfoot-lots-remaining"><?= (($travaux['lotsRemaining'] ?? $travaux['remainingBudget'] ?? 0) >= 0 ? '+' : '') . Format::currency($travaux['lotsRemaining'] ?? $travaux['remainingBudget'] ?? 36885.15) ?></td>
                   <td>
                     <div class="tfoot-progress-wrap">
-                      <div class="tfoot-progress-fill" id="tfoot-lots-progress-fill" style="width: <?= min(100, (float)($travaux['spentPct'] ?? 26.2)) ?>%;"></div>
+                      <div class="tfoot-progress-fill" id="tfoot-lots-progress-fill" style="width: <?= min(100, (float)($travaux['lotsSpentPct'] ?? $travaux['spentPct'] ?? 26.2)) ?>%;"></div>
                     </div>
-                    <span class="tfoot-progress-label font-mono" id="tfoot-lots-progress-pct"><?= $travaux['spentPct'] ?? 26.2 ?>%</span>
+                    <span class="tfoot-progress-label font-mono" id="tfoot-lots-progress-pct"><?= $travaux['lotsSpentPct'] ?? $travaux['spentPct'] ?? 26.2 ?>%</span>
                   </td>
-                  <td class="text-center">
-                    <span class="badge-tag" style="background:rgba(16,185,129,0.15); color:#34d399;">Solde sain</span>
+                  <td class="text-center" id="tfoot-lots-status-col">
+                    <span class="badge-tag" id="tfoot-lots-status-badge" style="background:rgba(16,185,129,0.15); color:#34d399;">Solde sain</span>
                   </td>
                 </tr>
               </tfoot>

@@ -301,7 +301,7 @@ export function calculateLotStatistics(rawLots = [], items = []) {
   let totalAllocated = 0;
   for (const lot of lotStats) {
     totalAllocated += lot.allocatedBudget;
-    lot.remaining = lot.allocatedBudget - lot.totalSpent;
+    lot.remaining = Number((lot.allocatedBudget - lot.totalSpent).toFixed(2));
     lot.percentConsumed = lot.allocatedBudget > 0 ? (lot.totalSpent / lot.allocatedBudget) * 100 : 0;
     lot.isOverBudget = lot.totalSpent > lot.allocatedBudget;
   }

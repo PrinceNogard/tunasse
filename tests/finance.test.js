@@ -218,5 +218,31 @@ describe('Finance & Calculation Engine Tests', () => {
       assert.equal(res.unallocatedBudget, 0);
       assert.equal(res.lotsRemaining, 36885.15);
     });
+
+    it('recalculates totals and remaining on the fly when lot base budgets are modified', () => {
+      // Clone fund state
+      const fund = JSON.parse(JSON.stringify(DEFAULT_STATE.travauxFund));
+      const lot1 = fund.lots.find(l => l.id === 'lot-1');
+      
+      // Simulate user editing base budget inline: 15 000 -> 12 000 €
+      lot1.allocatedBudget = 12000;
+      const res = calculateTravauxMetrics(fund, DEFAULT_STATE.profiles, DEFAULT_STATE.splitRule);
+      
+      assert.equal(res.totalAllocatedLots, 47000);
+      assert.equal(res.unallocatedBudget, 3000); // 50 000 - 47 000
+      assert.equal(res.lotsRemaining, 33885.15); // 47 000 - 13 114.85
+      
+      const updatedLot1 = res.lots.find(l => l.id === 'lot-1');
+      assert.equal(updatedLot1.remaining, 1521.15); // 12 000 - 10 478.85
+      assert.equal(updatedLot1.isOverBudget, false);
+
+      // Simulate over-budget inline modification: 12 000 -> 8 000 €
+      lot1.allocatedBudget = 8000;
+      const resOver = calculateTravauxMetrics(fund, DEFAULT_STATE.profiles, DEFAULT_STATE.splitRule);
+      const overLot1 = resOver.lots.find(l => l.id === 'lot-1');
+      assert.equal(overLot1.remaining, -2478.85); // 8 000 - 10 478.85
+      assert.equal(overLot1.isOverBudget, true);
+    });
   });
 });
+

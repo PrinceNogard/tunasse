@@ -3121,4 +3121,36 @@ body {
   -moz-appearance: textfield;
 }
 
+/* Travaux Lot Budget Inline Input */
+.input-lot-budget {
+  width: 95px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm, 6px);
+  padding: 5px 8px;
+  color: var(--text-main, #f8fafc);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: right;
+  transition: all 0.15s ease;
+}
+
+.input-lot-budget:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+  background: rgba(15, 23, 42, 0.98);
+}
+
+.travaux-lots-table input[type=number]::-webkit-inner-spin-button,
+.travaux-lots-table input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.travaux-lots-table input[type=number] {
+  -moz-appearance: textfield;
+}
+
+
 
