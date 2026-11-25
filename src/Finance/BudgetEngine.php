@@ -59,6 +59,66 @@ class BudgetEngine
     }
 
     /**
+     * Calculate Revolut-specific split ratios between two partners
+     */
+    public static function calculateRevolutRatios(
+        array $profiles = [],
+        array $revolutSplit = [],
+        string $fallbackSplitRule = '50'
+    ): array {
+        $p1 = $profiles[0] ?? ['income' => 2500.0];
+        $p2 = $profiles[1] ?? ['income' => 2500.0];
+
+        $mode = (string)($revolutSplit['mode'] ?? '');
+
+        if ($mode === 'custom' && isset($revolutSplit['p1Percent'])) {
+            $p1Pct = max(0.0, min(100.0, (float)$revolutSplit['p1Percent']));
+            $p2Pct = 100.0 - $p1Pct;
+            return [
+                'p1Ratio' => $p1Pct / 100.0,
+                'p2Ratio' => $p2Pct / 100.0,
+                'p1Percent' => round($p1Pct, 1),
+                'p2Percent' => round($p2Pct, 1),
+                'mode' => 'custom',
+            ];
+        }
+
+        if ($mode === 'income' || ($mode === '' && $fallbackSplitRule === 'income')) {
+            $totalIncome = (float)($p1['income'] ?? 0.0) + (float)($p2['income'] ?? 0.0);
+            if ($totalIncome > 0.0) {
+                $p1R = (float)($p1['income'] ?? 0.0) / $totalIncome;
+                $p2R = (float)($p2['income'] ?? 0.0) / $totalIncome;
+                return [
+                    'p1Ratio' => $p1R,
+                    'p2Ratio' => $p2R,
+                    'p1Percent' => round($p1R * 100.0, 1),
+                    'p2Percent' => round($p2R * 100.0, 1),
+                    'mode' => 'income',
+                ];
+            }
+        }
+
+        if (isset($revolutSplit['p1Percent']) && !isset($revolutSplit['mode'])) {
+            $p1Pct = max(0.0, min(100.0, (float)$revolutSplit['p1Percent']));
+            return [
+                'p1Ratio' => $p1Pct / 100.0,
+                'p2Ratio' => (100.0 - $p1Pct) / 100.0,
+                'p1Percent' => round($p1Pct, 1),
+                'p2Percent' => round(100.0 - $p1Pct, 1),
+                'mode' => 'custom',
+            ];
+        }
+
+        return [
+            'p1Ratio' => 0.5,
+            'p2Ratio' => 0.5,
+            'p1Percent' => 50.0,
+            'p2Percent' => 50.0,
+            'mode' => '50',
+        ];
+    }
+
+    /**
      * Calculate distribution applying offset or direct method
      */
     public static function calculateOffsetDistribution(
@@ -113,6 +173,7 @@ class BudgetEngine
 
         $loan = LoanCalculator::calculate($appState['simulator'] ?? []);
         $ratios = self::calculateSplitRatios($appState['profiles'] ?? [], (string)($appState['splitRule'] ?? '50'));
+        $revRatios = self::calculateRevolutRatios($appState['profiles'] ?? [], $appState['revolutSplit'] ?? [], (string)($appState['splitRule'] ?? '50'));
 
         $profiles = $appState['profiles'] ?? [];
         $p1 = $profiles[0] ?? ['id' => 'p1', 'name' => 'Axel'];
@@ -123,8 +184,8 @@ class BudgetEngine
 
         $p1LclBase = $lclMetrics['lclTotal'] * $ratios['p1Ratio'];
         $p2LclBase = $lclMetrics['lclTotal'] * $ratios['p2Ratio'];
-        $p1RevBase = $revolutBudgetTotal * $ratios['p1Ratio'];
-        $p2RevBase = $revolutBudgetTotal * $ratios['p2Ratio'];
+        $p1RevBase = $revolutBudgetTotal * $revRatios['p1Ratio'];
+        $p2RevBase = $revolutBudgetTotal * $revRatios['p2Ratio'];
 
         $lclOffset = self::calculateOffsetDistribution(
             $p1LclBase,
@@ -173,6 +234,7 @@ class BudgetEngine
             'loan' => $loan,
             'p1Ratio' => $ratios['p1Ratio'],
             'p2Ratio' => $ratios['p2Ratio'],
+            'revolutRatios' => $revRatios,
             'split' => [
                 'p1' => $p1,
                 'p2' => $p2,

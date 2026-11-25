@@ -112,6 +112,21 @@ MiniAssert::floatNear(30444.00, $budgets['globalAnnualBudget'], 0.01, 'Master gl
 MiniAssert::floatNear(1337.94, $budgets['split']['p1Total'], 0.02, 'Axel net monthly total contribution');
 MiniAssert::floatNear(1199.06, $budgets['split']['p2Total'], 0.02, 'Ariane net monthly total contribution');
 
+// Revolut Split Percentage Tests
+$revSplit50 = BudgetEngine::calculateRevolutRatios($defaultState['profiles'], ['mode' => '50', 'p1Percent' => 50, 'p2Percent' => 50]);
+MiniAssert::same(0.5, $revSplit50['p1Ratio'], 'Revolut 50/50 split p1 ratio');
+MiniAssert::same(0.5, $revSplit50['p2Ratio'], 'Revolut 50/50 split p2 ratio');
+
+$revSplitCustom = BudgetEngine::calculateRevolutRatios($defaultState['profiles'], ['mode' => 'custom', 'p1Percent' => 60]);
+MiniAssert::floatNear(0.60, $revSplitCustom['p1Ratio'], 0.01, 'Revolut 60/40 custom split p1 ratio');
+MiniAssert::floatNear(0.40, $revSplitCustom['p2Ratio'], 0.01, 'Revolut 60/40 custom split p2 ratio');
+
+$stateCustomRev = $defaultState;
+$stateCustomRev['revolutSplit'] = ['mode' => 'custom', 'p1Percent' => 60, 'p2Percent' => 40];
+$budgetsCustomRev = BudgetEngine::calculate($stateCustomRev);
+MiniAssert::floatNear(1155.00 * 0.60, $budgetsCustomRev['split']['p1Rev'], 0.01, 'Axel Revolut share at 60%');
+MiniAssert::floatNear(1155.00 * 0.40, $budgetsCustomRev['split']['p2Rev'], 0.01, 'Ariane Revolut share at 40%');
+
 // 4. Travaux 50 000 € Envelope Tests
 echo "\n▶ Travaux 50 000 € Envelope Tests:\n";
 $travaux = TravauxEngine::calculate($defaultState);

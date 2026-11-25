@@ -279,6 +279,25 @@ switch ($action) {
         ]);
         exit;
 
+    case 'update_revolut_split':
+        if (!isset($state['revolutSplit']) || !is_array($state['revolutSplit'])) {
+            $state['revolutSplit'] = ['mode' => '50', 'p1Percent' => 50.0, 'p2Percent' => 50.0];
+        }
+        if (isset($input['mode'])) {
+            $state['revolutSplit']['mode'] = (string)$input['mode'];
+        }
+        if (isset($input['p1Percent'])) {
+            $p1 = max(0.0, min(100.0, (float)$input['p1Percent']));
+            $state['revolutSplit']['p1Percent'] = $p1;
+            $state['revolutSplit']['p2Percent'] = 100.0 - $p1;
+        }
+        $store->save($state);
+        echo json_encode([
+            'success' => true,
+            'budgets' => BudgetEngine::calculate($state)
+        ]);
+        exit;
+
     case 'reset_all_data':
         $state = $store->reset();
         echo json_encode([

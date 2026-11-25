@@ -13,6 +13,7 @@ import {
   calculateLoanMetrics,
   calculateBudgets,
   calculateTravauxMetrics,
+  calculateRevolutRatios,
   resolveItemLot,
   computeElapsedMonths
 } from './js/finance.js';
@@ -1020,6 +1021,10 @@ function renderLclTab(data) {
 
 function renderRevolutTab(data) {
   const revolutBudgetTotal = (appState.revolutEnvelopes || []).reduce((sum, e) => sum + (Number(e.budget) || 0), 0);
+  const revRatios = calculateRevolutRatios(appState.profiles || [], appState.revolutSplit || {}, appState.splitRule || '50');
+  const p1 = (appState.profiles && appState.profiles[0]) || { name: 'Axel', color: '#0ea5e9', initials: 'AX' };
+  const p2 = (appState.profiles && appState.profiles[1]) || { name: 'Ariane', color: '#8b5cf6', initials: 'AR' };
+
   const setEl = (id, val) => {
     const el = document.getElementById(id);
     if (el) el.textContent = val;
@@ -1027,15 +1032,65 @@ function renderRevolutTab(data) {
   setEl('rev-banner-total', formatCurrency(revolutBudgetTotal));
   setEl('rev-banner-annual', `${formatCurrency(revolutBudgetTotal * 12)} / an`);
   setEl('revolut-envelopes-total-display', formatCurrency(revolutBudgetTotal));
-  setEl('revolut-envelopes-p1-total', formatCurrency(revolutBudgetTotal / 2));
-  setEl('revolut-envelopes-p2-total', formatCurrency(revolutBudgetTotal / 2));
+  setEl('revolut-envelopes-p1-total', formatCurrency(revolutBudgetTotal * revRatios.p1Ratio));
+  setEl('revolut-envelopes-p2-total', formatCurrency(revolutBudgetTotal * revRatios.p2Ratio));
+
+  // Table headers
+  const th1 = document.getElementById('th-revolut-p1');
+  if (th1) th1.textContent = `Part ${p1.name} (${revRatios.p1Percent}%)`;
+  const th2 = document.getElementById('th-revolut-p2');
+  if (th2) th2.textContent = `Part ${p2.name} (${revRatios.p2Percent}%)`;
+
+  // Split control boxes
+  const inP1 = document.getElementById('input-rev-split-p1');
+  const inP2 = document.getElementById('input-rev-split-p2');
+  const slider = document.getElementById('slider-rev-split');
+  const ind = document.getElementById('rev-split-indicator');
+  const barP1 = document.getElementById('rev-split-bar-p1');
+  const barP2 = document.getElementById('rev-split-bar-p2');
+
+  if (inP1 && document.activeElement !== inP1) inP1.value = revRatios.p1Percent;
+  if (inP2 && document.activeElement !== inP2) inP2.value = revRatios.p2Percent;
+  if (slider && document.activeElement !== slider) slider.value = revRatios.p1Percent;
+  if (ind) ind.textContent = `${revRatios.p1Percent}% / ${revRatios.p2Percent}%`;
+  if (barP1) barP1.style.width = `${revRatios.p1Percent}%`;
+  if (barP2) barP2.style.width = `${revRatios.p2Percent}%`;
+
+  setEl('rev-p1-name-display', p1.name);
+  setEl('rev-p2-name-display', p2.name);
+  setEl('rev-p1-amount-preview', `${formatCurrency(revolutBudgetTotal * revRatios.p1Ratio)} / mois`);
+  setEl('rev-p2-amount-preview', `${formatCurrency(revolutBudgetTotal * revRatios.p2Ratio)} / mois`);
+
+  // Presets styling
+  document.querySelectorAll('.rev-preset-btn').forEach(btn => {
+    const preset = btn.dataset.preset;
+    let isActive = false;
+    if (preset === '50' && revRatios.p1Percent === 50 && revRatios.p2Percent === 50 && revRatios.mode !== 'income') {
+      isActive = true;
+    } else if (preset === 'income' && revRatios.mode === 'income') {
+      isActive = true;
+    } else if (preset === '60' && revRatios.p1Percent === 60) {
+      isActive = true;
+    } else if (preset === '70' && revRatios.p1Percent === 70) {
+      isActive = true;
+    }
+
+    if (isActive) {
+      btn.classList.add('btn-primary');
+      btn.classList.remove('btn-secondary');
+    } else {
+      btn.classList.add('btn-secondary');
+      btn.classList.remove('btn-primary');
+    }
+  });
 
   const tbody = document.getElementById('revolut-envelopes-tbody');
   if (tbody) {
     tbody.innerHTML = '';
     (appState.revolutEnvelopes || []).forEach(env => {
       const b = Number(env.budget) || 0;
-      const half = b / 2;
+      const part1 = b * revRatios.p1Ratio;
+      const part2 = b * revRatios.p2Ratio;
       const tr = document.createElement('tr');
       tr.dataset.id = env.id;
       tr.innerHTML = `
@@ -1051,8 +1106,8 @@ function renderRevolutTab(data) {
             <span class="text-dim">€</span>
           </div>
         </td>
-        <td class="text-right font-mono text-cyan env-half-p1">${formatCurrency(half)}</td>
-        <td class="text-right font-mono text-violet env-half-p2">${formatCurrency(half)}</td>
+        <td class="text-right font-mono text-cyan env-half-p1">${formatCurrency(part1)}</td>
+        <td class="text-right font-mono text-violet env-half-p2">${formatCurrency(part2)}</td>
         <td class="text-center">
           <button type="button" class="btn-icon btn-delete-envelope" data-id="${env.id}" title="Supprimer cette enveloppe">🗑️</button>
         </td>
@@ -1757,6 +1812,59 @@ document.addEventListener('DOMContentLoaded', () => {
       appState.splitRule = e.target.value;
       saveStateImmediate();
       renderAll();
+    });
+  });
+
+  // Revolut Split Percentage Handlers
+  const applyRevolutSplit = (p1Pct, mode = 'custom') => {
+    const p1 = Math.max(0, Math.min(100, Math.round(Number(p1Pct) || 0)));
+    appState.revolutSplit = {
+      mode: mode,
+      p1Percent: p1,
+      p2Percent: 100 - p1
+    };
+    renderAll();
+    saveStateDebounced();
+  };
+
+  const sliderRev = document.getElementById('slider-rev-split');
+  if (sliderRev) {
+    sliderRev.addEventListener('input', (e) => {
+      applyRevolutSplit(e.target.value, 'custom');
+    });
+  }
+
+  const inRevP1 = document.getElementById('input-rev-split-p1');
+  if (inRevP1) {
+    inRevP1.addEventListener('input', (e) => {
+      applyRevolutSplit(e.target.value, 'custom');
+    });
+  }
+
+  const inRevP2 = document.getElementById('input-rev-split-p2');
+  if (inRevP2) {
+    inRevP2.addEventListener('input', (e) => {
+      const p2Val = Number(e.target.value) || 0;
+      applyRevolutSplit(100 - p2Val, 'custom');
+    });
+  }
+
+  document.querySelectorAll('.rev-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const preset = btn.dataset.preset;
+      if (preset === '50') {
+        applyRevolutSplit(50, '50');
+      } else if (preset === 'income') {
+        const p1Income = Number(appState.profiles?.[0]?.income) || 2500;
+        const p2Income = Number(appState.profiles?.[1]?.income) || 2500;
+        const total = p1Income + p2Income;
+        const pct = total > 0 ? Math.round((p1Income / total) * 100) : 50;
+        applyRevolutSplit(pct, 'income');
+      } else if (preset === '60') {
+        applyRevolutSplit(60, 'custom');
+      } else if (preset === '70') {
+        applyRevolutSplit(70, 'custom');
+      }
     });
   });
 

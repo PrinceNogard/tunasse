@@ -38,6 +38,11 @@ class JsonStore
                 ]
             ],
             'splitRule' => '50',
+            'revolutSplit' => [
+                'mode' => '50',
+                'p1Percent' => 50.0,
+                'p2Percent' => 50.0,
+            ],
             'simulator' => [
                 'totalGift' => 25000.00,
                 'userShare' => 50,
@@ -410,6 +415,9 @@ class JsonStore
         }
         if (!isset($state['splitRule'])) {
             $state['splitRule'] = '50';
+        }
+        if (!isset($state['revolutSplit']) || !is_array($state['revolutSplit'])) {
+            $state['revolutSplit'] = $default['revolutSplit'];
         }
         if (empty($state['simulator'])) {
             $state['simulator'] = $default['simulator'];

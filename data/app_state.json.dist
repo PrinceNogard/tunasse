@@ -18,6 +18,11 @@
         }
     ],
     "splitRule": "50",
+    "revolutSplit": {
+        "mode": "50",
+        "p1Percent": 50,
+        "p2Percent": 50
+    },
     "actualTransfers": {
         "p1Lcl": 760.44,
         "p2Lcl": 621.56,
