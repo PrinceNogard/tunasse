@@ -668,6 +668,94 @@
           </div>
         </div>
 
+        <!-- LCL Split Percentage Management Card -->
+        <div class="glass-card mt-6 mb-6">
+          <div class="card-header" style="align-items:flex-start;">
+            <div>
+              <div class="badge-tag lcl-tag mb-2">⚖️ Clé de Répartition LCL</div>
+              <h3 class="card-title">Répartition du Package LCL entre Partenaires</h3>
+              <p class="card-subtitle">Gérez directement le pourcentage de base attribué à chacun pour le compte joint LCL (hors compensation de prêt familial).</p>
+            </div>
+            <!-- Quick Presets -->
+            <div class="split-presets-group" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-primary btn-sm lcl-preset-btn" data-preset="50" id="btn-lcl-split-50">
+                ⚖️ 50 / 50
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm lcl-preset-btn" data-preset="income" id="btn-lcl-split-income">
+                📊 Au prorata des revenus
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm lcl-preset-btn" data-preset="60" id="btn-lcl-split-60">
+                60 / 40
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm lcl-preset-btn" data-preset="70" id="btn-lcl-split-70">
+                70 / 30
+              </button>
+            </div>
+          </div>
+
+          <!-- Interactive Split Controller -->
+          <div class="lcl-split-controller" style="margin-top:16px; padding:16px; background:rgba(15,23,42,0.4); border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+            <div class="grid-2-col" style="gap:20px; align-items:center;">
+              
+              <!-- Partner 1 -->
+              <div class="lcl-partner-split-box" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(14,165,233,0.06); border:1px solid rgba(14,165,233,0.25); border-radius:var(--radius-sm);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div class="avatar-sm" style="background:#0ea5e9; width:34px; height:34px; font-size:0.8rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700;">
+                    AX
+                  </div>
+                  <div>
+                    <strong style="color:var(--text-main); font-size:0.92rem;" id="lcl-p1-name-display">Axel</strong>
+                    <div class="font-mono text-cyan" id="lcl-p1-amount-preview" style="font-size:0.82rem; font-weight:600;">
+                      760,44 € / mois
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <input type="number" min="0" max="100" step="1" id="input-lcl-split-p1" class="custom-input font-mono" style="width:68px; text-align:right; font-weight:700; color:#38bdf8; padding:6px 8px;" value="50">
+                  <span style="font-weight:700; color:var(--text-dim);">%</span>
+                </div>
+              </div>
+
+              <!-- Partner 2 -->
+              <div class="lcl-partner-split-box" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.25); border-radius:var(--radius-sm);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div class="avatar-sm" style="background:#8b5cf6; width:34px; height:34px; font-size:0.8rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700;">
+                    AR
+                  </div>
+                  <div>
+                    <strong style="color:var(--text-main); font-size:0.92rem;" id="lcl-p2-name-display">Ariane</strong>
+                    <div class="font-mono text-violet" id="lcl-p2-amount-preview" style="font-size:0.82rem; font-weight:600;">
+                      621,56 € / mois
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <input type="number" min="0" max="100" step="1" id="input-lcl-split-p2" class="custom-input font-mono" style="width:68px; text-align:right; font-weight:700; color:#c084fc; padding:6px 8px;" value="50">
+                  <span style="font-weight:700; color:var(--text-dim);">%</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Slider Range -->
+            <div style="margin-top:16px;">
+              <input type="range" min="0" max="100" step="1" id="slider-lcl-split" class="range-slider" value="50" style="accent-color: #0ea5e9; margin:0;">
+              <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
+                <span>0% Axel / 100% Ariane</span>
+                <span id="lcl-split-indicator" style="font-weight:600; color:var(--text-main);">50% / 50%</span>
+                <span>100% Axel / 0% Ariane</span>
+              </div>
+            </div>
+
+            <!-- Visual Bar -->
+            <div style="margin-top:12px; height:8px; border-radius:999px; overflow:hidden; display:flex; background:rgba(255,255,255,0.06);">
+              <div id="lcl-split-bar-p1" style="width:50%; background:#0ea5e9; transition:width 0.15s ease;"></div>
+              <div id="lcl-split-bar-p2" style="width:50%; background:#8b5cf6; transition:width 0.15s ease;"></div>
+            </div>
+
+          </div>
+        </div>
+
         <div class="grid-2-col">
           <!-- LCL Structured Packages Column -->
           <div class="glass-card">

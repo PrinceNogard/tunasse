@@ -224,15 +224,31 @@ switch ($action) {
         exit;
 
     case 'save_lcl_item':
+        $itemId = (string)($input['id'] ?? '');
         $newItem = [
-            'id' => 'lcl-' . time(),
+            'id' => $itemId !== '' ? $itemId : ('lcl-' . time()),
             'label' => trim((string)($input['label'] ?? 'Charge fixe')),
             'amount' => (float)($input['amount'] ?? 0.0),
             'type' => (string)($input['type'] ?? 'monthly'),
             'category' => (string)($input['category'] ?? 'credit'),
             'notes' => trim((string)($input['notes'] ?? ''))
         ];
-        $state['lclItems'][] = $newItem;
+
+        $found = false;
+        if (!isset($state['lclItems'])) $state['lclItems'] = [];
+        foreach ($state['lclItems'] as &$item) {
+            if ($item['id'] === $newItem['id']) {
+                $item = $newItem;
+                $found = true;
+                break;
+            }
+        }
+        unset($item);
+
+        if (!$found) {
+            $state['lclItems'][] = $newItem;
+        }
+
         $store->save($state);
         echo json_encode([
             'success' => true,
@@ -272,6 +288,25 @@ switch ($action) {
 
     case 'update_split_rule':
         $state['splitRule'] = (string)($input['splitRule'] ?? '50');
+        $store->save($state);
+        echo json_encode([
+            'success' => true,
+            'budgets' => BudgetEngine::calculate($state)
+        ]);
+        exit;
+
+    case 'update_lcl_split':
+        if (!isset($state['lclSplit']) || !is_array($state['lclSplit'])) {
+            $state['lclSplit'] = ['mode' => '50', 'p1Percent' => 50.0, 'p2Percent' => 50.0];
+        }
+        if (isset($input['mode'])) {
+            $state['lclSplit']['mode'] = (string)$input['mode'];
+        }
+        if (isset($input['p1Percent'])) {
+            $p1 = max(0.0, min(100.0, (float)$input['p1Percent']));
+            $state['lclSplit']['p1Percent'] = $p1;
+            $state['lclSplit']['p2Percent'] = 100.0 - $p1;
+        }
         $store->save($state);
         echo json_encode([
             'success' => true,

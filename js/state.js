@@ -24,6 +24,11 @@ export const DEFAULT_STATE = {
     }
   ],
   splitRule: '50', // '50' or 'income'
+  lclSplit: {
+    mode: '50', // '50', 'income', or 'custom'
+    p1Percent: 50,
+    p2Percent: 50
+  },
   revolutSplit: {
     mode: '50', // '50', 'income', or 'custom'
     p1Percent: 50,
@@ -336,6 +341,10 @@ export function validateAndMigrateState(parsed, defaultState = DEFAULT_STATE) {
 
   if (!Array.isArray(merged.profiles) || merged.profiles.length < 2) {
     merged.profiles = JSON.parse(JSON.stringify(defaultState.profiles));
+  }
+
+  if (!merged.lclSplit || typeof merged.lclSplit !== 'object') {
+    merged.lclSplit = JSON.parse(JSON.stringify(defaultState.lclSplit));
   }
 
   if (!merged.revolutSplit || typeof merged.revolutSplit !== 'object') {

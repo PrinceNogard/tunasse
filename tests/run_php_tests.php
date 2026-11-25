@@ -112,6 +112,23 @@ MiniAssert::floatNear(30444.00, $budgets['globalAnnualBudget'], 0.01, 'Master gl
 MiniAssert::floatNear(1337.94, $budgets['split']['p1Total'], 0.02, 'Axel net monthly total contribution');
 MiniAssert::floatNear(1199.06, $budgets['split']['p2Total'], 0.02, 'Ariane net monthly total contribution');
 
+// LCL Split Percentage Tests
+$lclSplit50 = BudgetEngine::calculateLclRatios($defaultState['profiles'], ['mode' => '50', 'p1Percent' => 50, 'p2Percent' => 50]);
+MiniAssert::same(0.5, $lclSplit50['p1Ratio'], 'LCL 50/50 split p1 ratio');
+MiniAssert::same(0.5, $lclSplit50['p2Ratio'], 'LCL 50/50 split p2 ratio');
+
+$lclSplitCustom = BudgetEngine::calculateLclRatios($defaultState['profiles'], ['mode' => 'custom', 'p1Percent' => 60]);
+MiniAssert::floatNear(0.60, $lclSplitCustom['p1Ratio'], 0.01, 'LCL 60/40 custom split p1 ratio');
+MiniAssert::floatNear(0.40, $lclSplitCustom['p2Ratio'], 0.01, 'LCL 60/40 custom split p2 ratio');
+
+$stateCustomLcl = $defaultState;
+$stateCustomLcl['lclSplit'] = ['mode' => 'custom', 'p1Percent' => 60, 'p2Percent' => 40];
+$stateCustomLcl['simulator']['monthlyPayment'] = 0; // Test without loan offset
+$stateCustomLcl['simulator']['totalGift'] = 0;
+$budgetsCustomLcl = BudgetEngine::calculate($stateCustomLcl);
+MiniAssert::floatNear(1382.00 * 0.60, $budgetsCustomLcl['split']['p1Lcl'], 0.01, 'Axel LCL base share at 60%');
+MiniAssert::floatNear(1382.00 * 0.40, $budgetsCustomLcl['split']['p2Lcl'], 0.01, 'Ariane LCL base share at 40%');
+
 // Revolut Split Percentage Tests
 $revSplit50 = BudgetEngine::calculateRevolutRatios($defaultState['profiles'], ['mode' => '50', 'p1Percent' => 50, 'p2Percent' => 50]);
 MiniAssert::same(0.5, $revSplit50['p1Ratio'], 'Revolut 50/50 split p1 ratio');

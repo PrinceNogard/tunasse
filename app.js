@@ -13,6 +13,7 @@ import {
   calculateLoanMetrics,
   calculateBudgets,
   calculateTravauxMetrics,
+  calculateLclRatios,
   calculateRevolutRatios,
   resolveItemLot,
   computeElapsedMonths
@@ -310,6 +311,7 @@ function updateLclSplitDisplay(data) {
   const { split, loan, lclTotal } = data;
   const p1 = split.p1;
   const p2 = split.p2;
+  const lclRatios = data.lclRatios || calculateLclRatios(appState.profiles || [], appState.lclSplit || {}, appState.splitRule || '50');
 
   const setEl = (id, val) => {
     const el = document.getElementById(id);
@@ -324,15 +326,15 @@ function updateLclSplitDisplay(data) {
   const fmtLoan = formatCurrency(loan.monthlyPayment);
   if (loan.method === 'offset') {
     if (split.isP1Borrower) {
-      setEl('lcl-p1-sub', `Base (${formatCurrency(lclTotal * data.p1Ratio)}) + Prêt (+${fmtLoan})`);
-      setEl('lcl-p2-sub', `Base (${formatCurrency(lclTotal * data.p2Ratio)}) - Prêt (-${fmtLoan})`);
+      setEl('lcl-p1-sub', `Base (${formatCurrency(lclTotal * lclRatios.p1Ratio)} - ${lclRatios.p1Percent}%) + Prêt (+${fmtLoan})`);
+      setEl('lcl-p2-sub', `Base (${formatCurrency(lclTotal * lclRatios.p2Ratio)} - ${lclRatios.p2Percent}%) - Prêt (-${fmtLoan})`);
     } else {
-      setEl('lcl-p1-sub', `Base (${formatCurrency(lclTotal * data.p1Ratio)}) - Prêt (-${fmtLoan})`);
-      setEl('lcl-p2-sub', `Base (${formatCurrency(lclTotal * data.p2Ratio)}) + Prêt (+${fmtLoan})`);
+      setEl('lcl-p1-sub', `Base (${formatCurrency(lclTotal * lclRatios.p1Ratio)} - ${lclRatios.p1Percent}%) - Prêt (-${fmtLoan})`);
+      setEl('lcl-p2-sub', `Base (${formatCurrency(lclTotal * lclRatios.p2Ratio)} - ${lclRatios.p2Percent}%) + Prêt (+${fmtLoan})`);
     }
   } else {
-    setEl('lcl-p1-sub', `Quote-part exacte (${(data.p1Ratio * 100).toFixed(0)}%)`);
-    setEl('lcl-p2-sub', `Quote-part exacte (${(data.p2Ratio * 100).toFixed(0)}%)`);
+    setEl('lcl-p1-sub', `Quote-part exacte (${lclRatios.p1Percent}%)`);
+    setEl('lcl-p2-sub', `Quote-part exacte (${lclRatios.p2Percent}%)`);
   }
 }
 
@@ -917,9 +919,10 @@ function getItemIcon(label) {
 }
 
 function createLclItemRow(item) {
-  const annualVal = item.amount * 12;
+  const annualVal = (Number(item.amount) || 0) * 12;
   const row = document.createElement('div');
   row.className = 'lcl-item-row';
+  row.dataset.id = item.id;
   row.innerHTML = `
     <div class="lcl-item-left">
       <div class="lcl-item-icon">
@@ -930,14 +933,20 @@ function createLclItemRow(item) {
         <p>${item.notes || ''}</p>
       </div>
     </div>
-    <div class="lcl-item-right">
-      <div>
-        <div class="lcl-item-price">${formatCurrency(item.amount)} / mois</div>
-        <span class="lcl-item-annual">${formatCurrency(annualVal)} / an</span>
+    <div class="lcl-item-right" style="display:flex; align-items:center; gap:12px;">
+      <div style="text-align:right;">
+        <div style="display:inline-flex; align-items:center; gap:4px; justify-content:flex-end;">
+          <input type="number" step="5" min="0" class="input-lcl-amount font-mono" data-id="${item.id}" value="${item.amount}">
+          <span class="text-dim">€</span>
+        </div>
+        <div class="lcl-item-annual" style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">${formatCurrency(annualVal)} / an</div>
       </div>
-      <button class="lcl-actions-btn delete-btn btn-delete-lcl" data-id="${item.id}" title="Supprimer">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      </button>
+      <div style="display:flex; align-items:center; gap:4px;">
+        <button class="btn-icon btn-edit-lcl" data-id="${item.id}" title="Modifier">✏️</button>
+        <button class="lcl-actions-btn delete-btn btn-delete-lcl" data-id="${item.id}" title="Supprimer">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
     </div>
   `;
   return row;
@@ -996,8 +1005,55 @@ function renderLclTab(data) {
 
   const tfAnnualInput = document.getElementById('input-tf-annual');
   const tfMonthlyInput = document.getElementById('input-tf-monthly');
-  if (tfAnnualInput) tfAnnualInput.value = Math.round(taxeSubtotal * 12);
-  if (tfMonthlyInput) tfMonthlyInput.value = Math.round(taxeSubtotal);
+  if (tfAnnualInput && document.activeElement !== tfAnnualInput) tfAnnualInput.value = Math.round(taxeSubtotal * 12);
+  if (tfMonthlyInput && document.activeElement !== tfMonthlyInput) tfMonthlyInput.value = Math.round(taxeSubtotal);
+
+  // LCL Split Controller UI
+  const lclRatios = data.lclRatios || calculateLclRatios(appState.profiles || [], appState.lclSplit || {}, appState.splitRule || '50');
+  const p1 = (appState.profiles && appState.profiles[0]) || { name: 'Axel' };
+  const p2 = (appState.profiles && appState.profiles[1]) || { name: 'Ariane' };
+
+  const inLclP1 = document.getElementById('input-lcl-split-p1');
+  const inLclP2 = document.getElementById('input-lcl-split-p2');
+  const sliderLcl = document.getElementById('slider-lcl-split');
+  const indLcl = document.getElementById('lcl-split-indicator');
+  const barLclP1 = document.getElementById('lcl-split-bar-p1');
+  const barLclP2 = document.getElementById('lcl-split-bar-p2');
+
+  if (inLclP1 && document.activeElement !== inLclP1) inLclP1.value = lclRatios.p1Percent;
+  if (inLclP2 && document.activeElement !== inLclP2) inLclP2.value = lclRatios.p2Percent;
+  if (sliderLcl && document.activeElement !== sliderLcl) sliderLcl.value = lclRatios.p1Percent;
+  if (indLcl) indLcl.textContent = `${lclRatios.p1Percent}% / ${lclRatios.p2Percent}%`;
+  if (barLclP1) barLclP1.style.width = `${lclRatios.p1Percent}%`;
+  if (barLclP2) barLclP2.style.width = `${lclRatios.p2Percent}%`;
+
+  setEl('lcl-p1-name-display', p1.name);
+  setEl('lcl-p2-name-display', p2.name);
+  setEl('lcl-p1-amount-preview', `${formatCurrency(data.split.p1Lcl)} / mois`);
+  setEl('lcl-p2-amount-preview', `${formatCurrency(data.split.p2Lcl)} / mois`);
+
+  // Presets styling
+  document.querySelectorAll('.lcl-preset-btn').forEach(btn => {
+    const preset = btn.dataset.preset;
+    let isActive = false;
+    if (preset === '50' && lclRatios.p1Percent === 50 && lclRatios.p2Percent === 50 && lclRatios.mode !== 'income') {
+      isActive = true;
+    } else if (preset === 'income' && lclRatios.mode === 'income') {
+      isActive = true;
+    } else if (preset === '60' && lclRatios.p1Percent === 60) {
+      isActive = true;
+    } else if (preset === '70' && lclRatios.p1Percent === 70) {
+      isActive = true;
+    }
+
+    if (isActive) {
+      btn.classList.add('btn-primary');
+      btn.classList.remove('btn-secondary');
+    } else {
+      btn.classList.add('btn-secondary');
+      btn.classList.remove('btn-primary');
+    }
+  });
 
   const creditContainer = document.getElementById('lcl-credit-items');
   if (creditContainer) {
@@ -1492,8 +1548,26 @@ function handleDeleteLot(target) {
   }
 }
 
+function handleEditLcl(target) {
+  const btn = target.closest('.btn-edit-lcl') || target;
+  const lclId = btn.dataset.id;
+  const item = (appState.lclItems || []).find(x => x.id === lclId);
+  if (!item) return;
+
+  const modal = document.getElementById('lcl-item-modal');
+  const title = document.getElementById('lcl-item-modal-title');
+  if (title) title.textContent = 'Modifier le poste LCL';
+  document.getElementById('modal-lcl-id').value = item.id;
+  document.getElementById('modal-lcl-label').value = item.label || '';
+  document.getElementById('modal-lcl-amount').value = item.amount || 0;
+  document.getElementById('modal-lcl-category').value = item.category || 'credit';
+  document.getElementById('modal-lcl-notes').value = item.notes || '';
+  if (modal) modal.style.display = 'flex';
+}
+
 function handleDeleteLcl(target) {
-  const lclId = target.dataset.id;
+  const btn = target.closest('.btn-delete-lcl') || target;
+  const lclId = btn.dataset.id;
   if (confirm('Supprimer cette charge fixe LCL ?')) {
     appState.lclItems = (appState.lclItems || []).filter(x => x.id !== lclId);
     saveStateImmediate();
@@ -1531,6 +1605,7 @@ const CLICK_DISPATCHERS = [
   { selector: '.btn-delete-trv, .btn-delete-travaux', handler: handleDeleteTrv },
   { selector: '.btn-edit-lot', handler: handleEditLot },
   { selector: '.btn-delete-lot', handler: handleDeleteLot },
+  { selector: '.btn-edit-lcl', handler: handleEditLcl },
   { selector: '.btn-delete-lcl', handler: handleDeleteLcl },
   { selector: '.btn-delete-envelope', handler: handleDeleteEnvelope },
   { selector: '.btn-delete-expense', handler: handleDeleteExpense }
@@ -1801,9 +1876,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('change', (e) => {
-    if (e.target.classList.contains('transfer-input') || e.target.classList.contains('input-env-budget') || e.target.classList.contains('input-lot-budget')) {
+    if (e.target.classList.contains('transfer-input') || e.target.classList.contains('input-env-budget') || e.target.classList.contains('input-lot-budget') || e.target.classList.contains('input-lcl-amount')) {
+      if (e.target.classList.contains('input-lcl-amount')) {
+        const item = (appState.lclItems || []).find(it => it.id === e.target.dataset.id);
+        if (item) item.amount = parseFloat(e.target.value) || 0;
+      }
       saveStateImmediate();
-      if (e.target.classList.contains('input-env-budget')) renderAll();
+      if (e.target.classList.contains('input-env-budget') || e.target.classList.contains('input-lcl-amount')) renderAll();
+    }
+  });
+
+  document.addEventListener('input', (e) => {
+    if (e.target.classList.contains('input-lcl-amount')) {
+      const item = (appState.lclItems || []).find(it => it.id === e.target.dataset.id);
+      if (item) {
+        item.amount = parseFloat(e.target.value) || 0;
+        renderAll();
+        saveStateDebounced();
+      }
     }
   });
 
@@ -1814,6 +1904,89 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAll();
     });
   });
+
+  // LCL Split Percentage Handlers
+  const applyLclSplit = (p1Pct, mode = 'custom') => {
+    const p1 = Math.max(0, Math.min(100, Math.round(Number(p1Pct) || 0)));
+    appState.lclSplit = {
+      mode: mode,
+      p1Percent: p1,
+      p2Percent: 100 - p1
+    };
+    renderAll();
+    saveStateDebounced();
+  };
+
+  const sliderLcl = document.getElementById('slider-lcl-split');
+  if (sliderLcl) {
+    sliderLcl.addEventListener('input', (e) => {
+      applyLclSplit(e.target.value, 'custom');
+    });
+  }
+
+  const inLclP1 = document.getElementById('input-lcl-split-p1');
+  if (inLclP1) {
+    inLclP1.addEventListener('input', (e) => {
+      applyLclSplit(e.target.value, 'custom');
+    });
+  }
+
+  const inLclP2 = document.getElementById('input-lcl-split-p2');
+  if (inLclP2) {
+    inLclP2.addEventListener('input', (e) => {
+      const p2Val = Number(e.target.value) || 0;
+      applyLclSplit(100 - p2Val, 'custom');
+    });
+  }
+
+  document.querySelectorAll('.lcl-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const preset = btn.dataset.preset;
+      if (preset === '50') {
+        applyLclSplit(50, '50');
+      } else if (preset === 'income') {
+        const p1Income = Number(appState.profiles?.[0]?.income) || 2500;
+        const p2Income = Number(appState.profiles?.[1]?.income) || 2500;
+        const total = p1Income + p2Income;
+        const pct = total > 0 ? Math.round((p1Income / total) * 100) : 50;
+        applyLclSplit(pct, 'income');
+      } else if (preset === '60') {
+        applyLclSplit(60, 'custom');
+      } else if (preset === '70') {
+        applyLclSplit(70, 'custom');
+      }
+    });
+  });
+
+  // Taxe Foncière Inputs
+  const tfAnnual = document.getElementById('input-tf-annual');
+  const tfMonthly = document.getElementById('input-tf-monthly');
+  if (tfAnnual) {
+    tfAnnual.addEventListener('input', (e) => {
+      const annualVal = parseFloat(e.target.value) || 0;
+      const monthlyVal = Math.round((annualVal / 12) * 100) / 100;
+      if (tfMonthly && document.activeElement !== tfMonthly) tfMonthly.value = Math.round(monthlyVal);
+      const taxeItem = (appState.lclItems || []).find(it => it.category === 'taxe');
+      if (taxeItem) {
+        taxeItem.amount = monthlyVal;
+        renderAll();
+        saveStateDebounced();
+      }
+    });
+  }
+  if (tfMonthly) {
+    tfMonthly.addEventListener('input', (e) => {
+      const monthlyVal = parseFloat(e.target.value) || 0;
+      const annualVal = Math.round(monthlyVal * 12);
+      if (tfAnnual && document.activeElement !== tfAnnual) tfAnnual.value = annualVal;
+      const taxeItem = (appState.lclItems || []).find(it => it.category === 'taxe');
+      if (taxeItem) {
+        taxeItem.amount = monthlyVal;
+        renderAll();
+        saveStateDebounced();
+      }
+    });
+  }
 
   // Revolut Split Percentage Handlers
   const applyRevolutSplit = (p1Pct, mode = 'custom') => {
@@ -2188,6 +2361,63 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       saveStateImmediate();
       if (revCatModal) revCatModal.style.display = 'none';
+      renderAll();
+    });
+  }
+
+  // LCL Item Modal
+  const lclModal = document.getElementById('lcl-item-modal');
+  const lclForm = document.getElementById('lcl-item-form');
+  const btnAddLcl = document.getElementById('btn-add-lcl-item');
+  const btnCloseLcl = document.getElementById('btn-close-lcl-modal');
+  const btnCancelLcl = document.getElementById('btn-cancel-lcl-modal');
+
+  if (btnAddLcl) {
+    btnAddLcl.addEventListener('click', () => {
+      if (!lclModal || !lclForm) return;
+      lclForm.reset();
+      const title = document.getElementById('lcl-item-modal-title');
+      if (title) title.textContent = 'Ajouter un poste LCL';
+      document.getElementById('modal-lcl-id').value = '';
+      document.getElementById('modal-lcl-amount').value = '50';
+      document.getElementById('modal-lcl-category').value = 'credit';
+      lclModal.style.display = 'flex';
+    });
+  }
+  if (btnCloseLcl) btnCloseLcl.addEventListener('click', () => { if (lclModal) lclModal.style.display = 'none'; });
+  if (btnCancelLcl) btnCancelLcl.addEventListener('click', () => { if (lclModal) lclModal.style.display = 'none'; });
+
+  if (lclForm) {
+    lclForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('modal-lcl-id').value;
+      const label = document.getElementById('modal-lcl-label').value.trim();
+      const amount = parseFloat(document.getElementById('modal-lcl-amount').value) || 0;
+      const category = document.getElementById('modal-lcl-category').value;
+      const notes = document.getElementById('modal-lcl-notes').value.trim();
+      if (!label) return;
+
+      if (!appState.lclItems) appState.lclItems = [];
+      if (id) {
+        const existing = appState.lclItems.find(it => it.id === id);
+        if (existing) {
+          existing.label = label;
+          existing.amount = amount;
+          existing.category = category;
+          existing.notes = notes;
+        }
+      } else {
+        appState.lclItems.push({
+          id: 'lcl-' + Date.now(),
+          label,
+          amount,
+          category,
+          notes,
+          type: 'monthly'
+        });
+      }
+      saveStateImmediate();
+      if (lclModal) lclModal.style.display = 'none';
       renderAll();
     });
   }

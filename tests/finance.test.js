@@ -5,6 +5,7 @@ import {
   calculateLoanMetrics,
   calculateLclSubtotals,
   calculateSplitRatios,
+  calculateLclRatios,
   calculateRevolutRatios,
   calculateOffsetDistribution,
   calculateBudgets,
@@ -110,6 +111,37 @@ describe('Finance & Calculation Engine Tests', () => {
       // 3000 / 5000 = 60%, 2000 / 5000 = 40%
       assert.equal(p1Ratio, 0.6);
       assert.equal(p2Ratio, 0.4);
+    });
+  });
+
+  describe('calculateLclRatios()', () => {
+    const profiles = [
+      { id: 'p1', name: 'Axel', income: 3000 },
+      { id: 'p2', name: 'Ariane', income: 2000 }
+    ];
+
+    it('returns 50/50 ratio when lclSplit is default 50', () => {
+      const res = calculateLclRatios(profiles, { mode: '50', p1Percent: 50, p2Percent: 50 });
+      assert.equal(res.p1Ratio, 0.5);
+      assert.equal(res.p2Ratio, 0.5);
+      assert.equal(res.p1Percent, 50);
+      assert.equal(res.p2Percent, 50);
+    });
+
+    it('returns custom ratio when lclSplit is custom percentage', () => {
+      const res = calculateLclRatios(profiles, { mode: 'custom', p1Percent: 70 });
+      assert.equal(res.p1Ratio, 0.70);
+      assert.equal(res.p2Ratio, 0.30);
+      assert.equal(res.p1Percent, 70);
+      assert.equal(res.p2Percent, 30);
+    });
+
+    it('returns income prorata ratio when mode is income', () => {
+      const res = calculateLclRatios(profiles, { mode: 'income' });
+      assert.equal(res.p1Ratio, 0.6);
+      assert.equal(res.p2Ratio, 0.4);
+      assert.equal(res.p1Percent, 60);
+      assert.equal(res.p2Percent, 40);
     });
   });
 

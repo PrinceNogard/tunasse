@@ -198,6 +198,65 @@ export function calculateRevolutRatios(profiles = [], revolutSplit = {}, fallbac
 }
 
 /**
+ * Calculate LCL-specific split ratios between two partners
+ * @param {Array} profiles 
+ * @param {Object} lclSplit 
+ * @param {string} fallbackSplitRule 
+ * @returns {{ p1Ratio: number, p2Ratio: number, p1Percent: number, p2Percent: number, mode: string }}
+ */
+export function calculateLclRatios(profiles = [], lclSplit = {}, fallbackSplitRule = '50') {
+  const p1 = profiles[0] || { income: 2500 };
+  const p2 = profiles[1] || { income: 2500 };
+
+  const mode = lclSplit?.mode;
+  if (mode === 'custom' && typeof lclSplit?.p1Percent === 'number') {
+    const p1Pct = Math.max(0, Math.min(100, Number(lclSplit.p1Percent) || 0));
+    const p2Pct = 100 - p1Pct;
+    return {
+      p1Ratio: p1Pct / 100,
+      p2Ratio: p2Pct / 100,
+      p1Percent: Math.round(p1Pct * 10) / 10,
+      p2Percent: Math.round(p2Pct * 10) / 10,
+      mode: 'custom'
+    };
+  }
+
+  if (mode === 'income' || (!mode && fallbackSplitRule === 'income')) {
+    const totalIncome = (Number(p1.income) || 0) + (Number(p2.income) || 0);
+    if (totalIncome > 0) {
+      const p1R = (Number(p1.income) || 0) / totalIncome;
+      const p2R = (Number(p2.income) || 0) / totalIncome;
+      return {
+        p1Ratio: p1R,
+        p2Ratio: p2R,
+        p1Percent: Math.round(p1R * 1000) / 10,
+        p2Percent: Math.round(p2R * 1000) / 10,
+        mode: 'income'
+      };
+    }
+  }
+
+  if (typeof lclSplit?.p1Percent === 'number' && !mode) {
+    const p1Pct = Math.max(0, Math.min(100, Number(lclSplit.p1Percent) || 0));
+    return {
+      p1Ratio: p1Pct / 100,
+      p2Ratio: (100 - p1Pct) / 100,
+      p1Percent: Math.round(p1Pct * 10) / 10,
+      p2Percent: Math.round((100 - p1Pct) * 10) / 10,
+      mode: 'custom'
+    };
+  }
+
+  return {
+    p1Ratio: 0.5,
+    p2Ratio: 0.5,
+    p1Percent: 50,
+    p2Percent: 50,
+    mode: '50'
+  };
+}
+
+/**
  * Calculate net partner monthly amounts applying either offset or direct method
  */
 export function calculateOffsetDistribution(p1Base, p2Base, monthlyPayment, isP1Borrower, method) {
@@ -240,14 +299,15 @@ export function calculateBudgets(appState = {}) {
 
   const loan = calculateLoanMetrics(appState.simulator || {});
   const { p1Ratio, p2Ratio } = calculateSplitRatios(appState.profiles || [], appState.splitRule || '50');
+  const lclRatios = calculateLclRatios(appState.profiles || [], appState.lclSplit || {}, appState.splitRule || '50');
   const revRatios = calculateRevolutRatios(appState.profiles || [], appState.revolutSplit || {}, appState.splitRule || '50');
 
   const p1 = (appState.profiles && appState.profiles[0]) || { id: 'p1', name: 'Axel' };
   const p2 = (appState.profiles && appState.profiles[1]) || { id: 'p2', name: 'Ariane' };
   const isP1Borrower = ((appState.simulator && appState.simulator.borrowerId) === p1.id);
 
-  const p1LclBase = lclMetrics.lclTotal * p1Ratio;
-  const p2LclBase = lclMetrics.lclTotal * p2Ratio;
+  const p1LclBase = lclMetrics.lclTotal * lclRatios.p1Ratio;
+  const p2LclBase = lclMetrics.lclTotal * lclRatios.p2Ratio;
   const p1RevBase = revolutBudgetTotal * revRatios.p1Ratio;
   const p2RevBase = revolutBudgetTotal * revRatios.p2Ratio;
 
@@ -284,6 +344,7 @@ export function calculateBudgets(appState = {}) {
     loan,
     p1Ratio,
     p2Ratio,
+    lclRatios,
     revolutRatios: revRatios,
     split: {
       p1,
