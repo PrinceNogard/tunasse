@@ -22,7 +22,8 @@ import {
 import {
   DEFAULT_STATE,
   STORAGE_KEY,
-  loadState
+  loadState,
+  validateAndMigrateState
 } from './js/state.js';
 
 import {
@@ -1755,7 +1756,7 @@ function closeLotModal() {
 }
 
 // Initialization
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
   renderAll();
 
   if (!isHydratedFromServer && typeof fetch === 'function' && typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
@@ -1879,20 +1880,28 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTravauxDashboardWidget(m);
       }
     }
-    if (e.target.classList.contains('profile-name-input')) {
-      const p = appState.profiles.find(x => x.id === e.target.dataset.id);
+    if (e.target.classList.contains('profile-name-input') || e.target.classList.contains('profile-input-name')) {
+      const p = appState.profiles.find(x => x.id === e.target.dataset.id) || (appState.profiles && appState.profiles[Number(e.target.dataset.index)]);
       if (p) {
         p.name = e.target.value.trim() || p.name;
         saveStateImmediate();
         renderAll();
       }
     }
-    if (e.target.classList.contains('profile-income-input')) {
-      const p = appState.profiles.find(x => x.id === e.target.dataset.id);
+    if (e.target.classList.contains('profile-income-input') || e.target.classList.contains('profile-input-income')) {
+      const p = appState.profiles.find(x => x.id === e.target.dataset.id) || (appState.profiles && appState.profiles[Number(e.target.dataset.index)]);
       if (p) {
         p.income = parseFloat(e.target.value) || 0;
         saveStateImmediate();
         renderAll();
+      }
+    }
+    if (e.target.classList.contains('input-lcl-amount')) {
+      const item = (appState.lclItems || []).find(it => it.id === e.target.dataset.id);
+      if (item) {
+        item.amount = parseFloat(e.target.value) || 0;
+        renderAll();
+        saveStateDebounced();
       }
     }
   });
@@ -1905,25 +1914,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       saveStateImmediate();
       if (e.target.classList.contains('input-env-budget') || e.target.classList.contains('input-lcl-amount')) renderAll();
-    }
-  });
-
-  document.addEventListener('input', (e) => {
-    if (e.target.classList.contains('input-lcl-amount')) {
-      const item = (appState.lclItems || []).find(it => it.id === e.target.dataset.id);
-      if (item) {
-        item.amount = parseFloat(e.target.value) || 0;
-        renderAll();
-        saveStateDebounced();
-      }
-    }
-    if (e.target.classList.contains('input-env-budget')) {
-      const item = (appState.revolutEnvelopes || []).find(it => it.id === e.target.dataset.id);
-      if (item) {
-        item.budget = parseFloat(e.target.value) || 0;
-        renderAll();
-        saveStateDebounced();
-      }
     }
   });
 
@@ -1962,7 +1952,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       container.addEventListener('pointermove', (e) => {
-        if (!isDragging && (!e.buttons || !(e.buttons & 1))) return;
+        if (!isDragging) return;
         applyFn(calcPct(e.clientX), 'custom');
       });
 
@@ -1994,7 +1984,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const inLclP1 = document.getElementById('input-lcl-split-p1');
   if (inLclP1) {
-    const handleLclP1 = (e) => applyLclSplit(e.target.value, 'custom');
+    const handleLclP1 = (e) => {
+      const val = e.target.value.trim();
+      if (val === '') return;
+      applyLclSplit(val, 'custom');
+    };
     inLclP1.addEventListener('input', handleLclP1);
     inLclP1.addEventListener('change', handleLclP1);
   }
@@ -2002,7 +1996,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const inLclP2 = document.getElementById('input-lcl-split-p2');
   if (inLclP2) {
     const handleLclP2 = (e) => {
-      const p2Val = Number(e.target.value) || 0;
+      const val = e.target.value.trim();
+      if (val === '') return;
+      const p2Val = Number(val) || 0;
       applyLclSplit(100 - p2Val, 'custom');
     };
     inLclP2.addEventListener('input', handleLclP2);
@@ -2074,7 +2070,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const inRevP1 = document.getElementById('input-rev-split-p1');
   if (inRevP1) {
-    const handleRevP1 = (e) => applyRevolutSplit(e.target.value, 'custom');
+    const handleRevP1 = (e) => {
+      const val = e.target.value.trim();
+      if (val === '') return;
+      applyRevolutSplit(val, 'custom');
+    };
     inRevP1.addEventListener('input', handleRevP1);
     inRevP1.addEventListener('change', handleRevP1);
   }
@@ -2082,7 +2082,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const inRevP2 = document.getElementById('input-rev-split-p2');
   if (inRevP2) {
     const handleRevP2 = (e) => {
-      const p2Val = Number(e.target.value) || 0;
+      const val = e.target.value.trim();
+      if (val === '') return;
+      const p2Val = Number(val) || 0;
       applyRevolutSplit(100 - p2Val, 'custom');
     };
     inRevP2.addEventListener('input', handleRevP2);
@@ -2750,4 +2752,12 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Mode Démo activé : Les comptes LCL (1 450,20 €) et Revolut (620,40 €) sont maintenant connectés et synchronisés !');
     });
   }
-});
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
+    initApp();
+  }
+}

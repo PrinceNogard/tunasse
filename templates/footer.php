@@ -11,6 +11,6 @@
   <script>
     window.__INITIAL_STATE__ = <?= json_encode($state, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>;
   </script>
-  <script type="module" src="app.js"></script>
+  <script type="module" src="app.js?v=<?= filemtime(__DIR__ . '/../app.js') ?>"></script>
 </body>
 </html>
