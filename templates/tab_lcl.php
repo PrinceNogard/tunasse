@@ -124,9 +124,9 @@ $p2LclPercent = $lclRatios['p2Percent'];
             </div>
 
             <!-- Visual Bar -->
-            <div style="margin-top:12px; height:8px; border-radius:999px; overflow:hidden; display:flex; background:rgba(255,255,255,0.06);">
-              <div id="lcl-split-bar-p1" style="width:<?= $p1LclPercent ?>%; background:#0ea5e9; transition:width 0.15s ease;"></div>
-              <div id="lcl-split-bar-p2" style="width:<?= $p2LclPercent ?>%; background:#8b5cf6; transition:width 0.15s ease;"></div>
+            <div id="lcl-split-bar-container" class="split-bar-interactive" style="margin-top:12px; height:12px; border-radius:999px; overflow:hidden; display:flex; background:rgba(255,255,255,0.06); cursor:pointer; position:relative; touch-action:none;" title="Cliquer ou glisser pour ajuster la répartition">
+              <div id="lcl-split-bar-p1" style="width:<?= $p1LclPercent ?>%; background:#0ea5e9; transition:width 0.1s ease; pointer-events:none;"></div>
+              <div id="lcl-split-bar-p2" style="width:<?= $p2LclPercent ?>%; background:#8b5cf6; transition:width 0.1s ease; pointer-events:none;"></div>
             </div>
 
           </div>

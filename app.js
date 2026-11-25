@@ -1159,11 +1159,12 @@ function renderRevolutTab(data) {
   if (tbody) {
     const envelopes = appState.revolutEnvelopes || [];
     const existingRows = Array.from(tbody.querySelectorAll('tr[data-id]'));
-    const canReuse = existingRows.length === envelopes.length && envelopes.every((env, idx) => existingRows[idx]?.dataset?.id === env.id);
+    const allFound = envelopes.length > 0 && envelopes.length === existingRows.length && envelopes.every(env => tbody.querySelector(`tr[data-id="${env.id}"]`));
 
-    if (canReuse) {
-      envelopes.forEach((env, idx) => {
-        const tr = existingRows[idx];
+    if (allFound) {
+      envelopes.forEach(env => {
+        const tr = tbody.querySelector(`tr[data-id="${env.id}"]`);
+        if (!tr) return;
         const b = Number(env.budget) || 0;
         const input = tr.querySelector('.input-env-budget');
         if (input && document.activeElement !== input) input.value = b;
@@ -1916,6 +1917,14 @@ document.addEventListener('DOMContentLoaded', () => {
         saveStateDebounced();
       }
     }
+    if (e.target.classList.contains('input-env-budget')) {
+      const item = (appState.revolutEnvelopes || []).find(it => it.id === e.target.dataset.id);
+      if (item) {
+        item.budget = parseFloat(e.target.value) || 0;
+        renderAll();
+        saveStateDebounced();
+      }
+    }
   });
 
   document.querySelectorAll('input[name="split-rule"]').forEach(radio => {
@@ -1925,6 +1934,49 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAll();
     });
   });
+
+  const setupInteractiveSplitBar = (containerId, sliderId, applyFn) => {
+    const container = document.getElementById(containerId);
+    const slider = document.getElementById(sliderId);
+
+    if (slider) {
+      const syncSlider = (e) => applyFn(e.target.value, 'custom');
+      slider.addEventListener('input', syncSlider);
+      slider.addEventListener('change', syncSlider);
+    }
+
+    if (container) {
+      let isDragging = false;
+
+      const calcPct = (clientX) => {
+        const rect = container.getBoundingClientRect();
+        if (!rect.width) return 50;
+        const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+        return Math.max(0, Math.min(100, Math.round((x / rect.width) * 100)));
+      };
+
+      container.addEventListener('pointerdown', (e) => {
+        isDragging = true;
+        try { container.setPointerCapture(e.pointerId); } catch (_) {}
+        applyFn(calcPct(e.clientX), 'custom');
+      });
+
+      container.addEventListener('pointermove', (e) => {
+        if (!isDragging && (!e.buttons || !(e.buttons & 1))) return;
+        applyFn(calcPct(e.clientX), 'custom');
+      });
+
+      const endDrag = (e) => {
+        if (isDragging) {
+          isDragging = false;
+          try { container.releasePointerCapture(e.pointerId); } catch (_) {}
+        }
+      };
+
+      container.addEventListener('pointerup', endDrag);
+      container.addEventListener('pointercancel', endDrag);
+    }
+  };
 
   // LCL Split Percentage Handlers
   const applyLclSplit = (p1Pct, mode = 'custom') => {
@@ -1938,26 +1990,23 @@ document.addEventListener('DOMContentLoaded', () => {
     saveStateDebounced();
   };
 
-  const sliderLcl = document.getElementById('slider-lcl-split');
-  if (sliderLcl) {
-    sliderLcl.addEventListener('input', (e) => {
-      applyLclSplit(e.target.value, 'custom');
-    });
-  }
+  setupInteractiveSplitBar('lcl-split-bar-container', 'slider-lcl-split', applyLclSplit);
 
   const inLclP1 = document.getElementById('input-lcl-split-p1');
   if (inLclP1) {
-    inLclP1.addEventListener('input', (e) => {
-      applyLclSplit(e.target.value, 'custom');
-    });
+    const handleLclP1 = (e) => applyLclSplit(e.target.value, 'custom');
+    inLclP1.addEventListener('input', handleLclP1);
+    inLclP1.addEventListener('change', handleLclP1);
   }
 
   const inLclP2 = document.getElementById('input-lcl-split-p2');
   if (inLclP2) {
-    inLclP2.addEventListener('input', (e) => {
+    const handleLclP2 = (e) => {
       const p2Val = Number(e.target.value) || 0;
       applyLclSplit(100 - p2Val, 'custom');
-    });
+    };
+    inLclP2.addEventListener('input', handleLclP2);
+    inLclP2.addEventListener('change', handleLclP2);
   }
 
   document.querySelectorAll('.lcl-preset-btn').forEach(btn => {
@@ -2021,26 +2070,23 @@ document.addEventListener('DOMContentLoaded', () => {
     saveStateDebounced();
   };
 
-  const sliderRev = document.getElementById('slider-rev-split');
-  if (sliderRev) {
-    sliderRev.addEventListener('input', (e) => {
-      applyRevolutSplit(e.target.value, 'custom');
-    });
-  }
+  setupInteractiveSplitBar('rev-split-bar-container', 'slider-rev-split', applyRevolutSplit);
 
   const inRevP1 = document.getElementById('input-rev-split-p1');
   if (inRevP1) {
-    inRevP1.addEventListener('input', (e) => {
-      applyRevolutSplit(e.target.value, 'custom');
-    });
+    const handleRevP1 = (e) => applyRevolutSplit(e.target.value, 'custom');
+    inRevP1.addEventListener('input', handleRevP1);
+    inRevP1.addEventListener('change', handleRevP1);
   }
 
   const inRevP2 = document.getElementById('input-rev-split-p2');
   if (inRevP2) {
-    inRevP2.addEventListener('input', (e) => {
+    const handleRevP2 = (e) => {
       const p2Val = Number(e.target.value) || 0;
       applyRevolutSplit(100 - p2Val, 'custom');
-    });
+    };
+    inRevP2.addEventListener('input', handleRevP2);
+    inRevP2.addEventListener('change', handleRevP2);
   }
 
   document.querySelectorAll('.rev-preset-btn').forEach(btn => {

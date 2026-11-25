@@ -954,6 +954,20 @@ body {
 }
 
 /* Custom Range Input */
+.split-bar-interactive {
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.split-bar-interactive:hover {
+  transform: scaleY(1.15);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+}
+
 .range-slider {
   -webkit-appearance: none;
   appearance: none;
