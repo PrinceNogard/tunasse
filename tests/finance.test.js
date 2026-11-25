@@ -205,6 +205,24 @@ describe('Finance & Calculation Engine Tests', () => {
       // Loan monthly payment = 69.44
       assert.equal(res.loan.monthlyPayment.toFixed(2), '69.44');
     });
+
+    it('accurately balances partner contributions with dynamic LCL and Revolut splits', () => {
+      const state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      state.lclSplit = { mode: 'custom', p1Percent: 70, p2Percent: 30 };
+      state.revolutSplit = { mode: 'custom', p1Percent: 60, p2Percent: 40 };
+      const res = calculateBudgets(state);
+
+      assert.equal(res.p1Contrib.total + res.p2Contrib.total, res.globalMonthlyBudget);
+      assert.equal(res.p1Contrib.lcl + res.p2Contrib.lcl, res.lclTotal);
+      assert.equal(res.p1Contrib.rev + res.p2Contrib.rev, res.revolutBudgetTotal);
+      assert.equal(res.p1Contrib.lcl.toFixed(2), '1036.84');
+      assert.equal(res.p2Contrib.lcl.toFixed(2), '345.16');
+      assert.equal(res.p1Contrib.rev.toFixed(2), '693.00');
+      assert.equal(res.p2Contrib.rev.toFixed(2), '462.00');
+      assert.equal(res.p1Contrib.total.toFixed(2), '1729.84');
+      assert.equal(res.p2Contrib.total.toFixed(2), '807.16');
+      assert.equal((res.p1Contrib.total + res.p2Contrib.total).toFixed(2), '2537.00');
+    });
   });
 
   describe('resolveItemLot()', () => {

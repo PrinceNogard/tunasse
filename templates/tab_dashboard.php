@@ -189,7 +189,7 @@ $recentExpenses = array_slice(array_reverse($state['expenses'] ?? []), 0, 8);
                 <tr>
                   <td>
                     <span class="bank-tag lcl-tag">LCL</span> <strong>Compte Joint LCL</strong>
-                    <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">Package Logement (<?= Format::currency($budgets['lclTotal'] ?? 1382) ?>)</div>
+                    <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;" id="transfer-lcl-subtotal">Package Logement (<?= Format::currency($budgets['lclTotal'] ?? 1382) ?>)</div>
                   </td>
                   <td class="text-right font-mono" id="target-lcl-p1"><?= Format::currency($p1Contrib['lcl'] ?? 760.44) ?></td>
                   <td class="text-right">
@@ -207,7 +207,7 @@ $recentExpenses = array_slice(array_reverse($state['expenses'] ?? []), 0, 8);
                 <tr>
                   <td>
                     <span class="bank-tag rev-tag">Revolut</span> <strong>Compte Commun Revolut</strong>
-                    <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">Vie Courante Foyer (<?= Format::currency($budgets['revolutTotal'] ?? 900) ?>)</div>
+                    <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;" id="transfer-rev-subtotal">Vie Courante Foyer (<?= Format::currency($budgets['revolutTotal'] ?? 900) ?>)</div>
                   </td>
                   <td class="text-right font-mono" id="target-rev-p1"><?= Format::currency($p1Contrib['rev'] ?? 450) ?></td>
                   <td class="text-right">

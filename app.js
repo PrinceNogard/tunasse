@@ -289,6 +289,16 @@ function updateDashboardCoupleCards(data) {
   if (barP1) barP1.style.width = `${p1Pct.toFixed(1)}%`;
   if (barP2) barP2.style.width = `${p2Pct.toFixed(1)}%`;
 
+  // Dynamic pill update for split mode label
+  const lclR = data.lclRatios || calculateLclRatios(appState.profiles || [], appState.lclSplit || {}, appState.splitRule || '50');
+  const revR = data.revolutRatios || calculateRevolutRatios(appState.profiles || [], appState.revolutSplit || {}, appState.splitRule || '50');
+  const lclLabel = lclR.mode === 'income' ? 'Revenus' : `${lclR.p1Percent}/${lclR.p2Percent}`;
+  const revLabel = revR.mode === 'income' ? 'Revenus' : `${revR.p1Percent}/${revR.p2Percent}`;
+  const splitText = (lclLabel === revLabel)
+    ? (lclR.mode === 'income' ? 'Proportionnelle aux Revenus + Prêt compensé' : `${lclLabel} + Prêt compensé`)
+    : `LCL ${lclLabel} · Revolut ${revLabel} + Prêt compensé`;
+  setEl('split-mode-label', splitText);
+
   const noticeEl = document.getElementById('equalizer-notice-text');
   if (!noticeEl) return;
 
@@ -1055,21 +1065,26 @@ function renderLclTab(data) {
     }
   });
 
-  const creditContainer = document.getElementById('lcl-credit-items');
-  if (creditContainer) {
-    creditContainer.innerHTML = '';
-    appState.lclItems.filter(i => (i.category === 'credit' || !i.category)).forEach(item => {
-      creditContainer.appendChild(createLclItemRow(item));
-    });
-  }
+  const updateOrBuildLclItems = (container, items) => {
+    if (!container) return;
+    const existingRows = Array.from(container.querySelectorAll('.lcl-item-row'));
+    const canReuse = existingRows.length === items.length && items.every((it, idx) => existingRows[idx]?.dataset?.id === it.id);
+    if (canReuse) {
+      items.forEach((item, idx) => {
+        const row = existingRows[idx];
+        const input = row.querySelector('.input-lcl-amount');
+        if (input && document.activeElement !== input) input.value = item.amount;
+        const annualEl = row.querySelector('.lcl-item-annual');
+        if (annualEl) annualEl.textContent = `${formatCurrency((Number(item.amount) || 0) * 12)} / an`;
+      });
+    } else {
+      container.innerHTML = '';
+      items.forEach(item => container.appendChild(createLclItemRow(item)));
+    }
+  };
 
-  const maintContainer = document.getElementById('lcl-maintenance-items');
-  if (maintContainer) {
-    maintContainer.innerHTML = '';
-    appState.lclItems.filter(i => i.category === 'maintenance').forEach(item => {
-      maintContainer.appendChild(createLclItemRow(item));
-    });
-  }
+  updateOrBuildLclItems(document.getElementById('lcl-credit-items'), appState.lclItems.filter(i => (i.category === 'credit' || !i.category)));
+  updateOrBuildLclItems(document.getElementById('lcl-maintenance-items'), appState.lclItems.filter(i => i.category === 'maintenance'));
 
   updateLclSplitDisplay(data);
   renderLclStackedBar(lclTotal);
@@ -1142,34 +1157,51 @@ function renderRevolutTab(data) {
 
   const tbody = document.getElementById('revolut-envelopes-tbody');
   if (tbody) {
-    tbody.innerHTML = '';
-    (appState.revolutEnvelopes || []).forEach(env => {
-      const b = Number(env.budget) || 0;
-      const part1 = b * revRatios.p1Ratio;
-      const part2 = b * revRatios.p2Ratio;
-      const tr = document.createElement('tr');
-      tr.dataset.id = env.id;
-      tr.innerHTML = `
-        <td>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="envelope-icon" style="font-size:1.15rem;">${env.icon || '📁'}</span>
-            <strong style="color:var(--text-main);">${env.name}</strong>
-          </div>
-        </td>
-        <td class="text-right">
-          <div style="display:inline-flex; align-items:center; gap:4px; justify-content:flex-end;">
-            <input type="number" step="5" min="0" class="input-env-budget font-mono" data-id="${env.id}" value="${b}">
-            <span class="text-dim">€</span>
-          </div>
-        </td>
-        <td class="text-right font-mono text-cyan env-half-p1">${formatCurrency(part1)}</td>
-        <td class="text-right font-mono text-violet env-half-p2">${formatCurrency(part2)}</td>
-        <td class="text-center">
-          <button type="button" class="btn-icon btn-delete-envelope" data-id="${env.id}" title="Supprimer cette enveloppe">🗑️</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
+    const envelopes = appState.revolutEnvelopes || [];
+    const existingRows = Array.from(tbody.querySelectorAll('tr[data-id]'));
+    const canReuse = existingRows.length === envelopes.length && envelopes.every((env, idx) => existingRows[idx]?.dataset?.id === env.id);
+
+    if (canReuse) {
+      envelopes.forEach((env, idx) => {
+        const tr = existingRows[idx];
+        const b = Number(env.budget) || 0;
+        const input = tr.querySelector('.input-env-budget');
+        if (input && document.activeElement !== input) input.value = b;
+        const half1 = tr.querySelector('.env-half-p1');
+        const half2 = tr.querySelector('.env-half-p2');
+        if (half1) half1.textContent = formatCurrency(b * revRatios.p1Ratio);
+        if (half2) half2.textContent = formatCurrency(b * revRatios.p2Ratio);
+      });
+    } else {
+      tbody.innerHTML = '';
+      envelopes.forEach(env => {
+        const b = Number(env.budget) || 0;
+        const part1 = b * revRatios.p1Ratio;
+        const part2 = b * revRatios.p2Ratio;
+        const tr = document.createElement('tr');
+        tr.dataset.id = env.id;
+        tr.innerHTML = `
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="envelope-icon" style="font-size:1.15rem;">${env.icon || '📁'}</span>
+              <strong style="color:var(--text-main);">${env.name}</strong>
+            </div>
+          </td>
+          <td class="text-right">
+            <div style="display:inline-flex; align-items:center; gap:4px; justify-content:flex-end;">
+              <input type="number" step="5" min="0" class="input-env-budget font-mono" data-id="${env.id}" value="${b}">
+              <span class="text-dim">€</span>
+            </div>
+          </td>
+          <td class="text-right font-mono text-cyan env-half-p1">${formatCurrency(part1)}</td>
+          <td class="text-right font-mono text-violet env-half-p2">${formatCurrency(part2)}</td>
+          <td class="text-center">
+            <button type="button" class="btn-icon btn-delete-envelope" data-id="${env.id}" title="Supprimer cette enveloppe">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
   }
 }
 
@@ -1353,6 +1385,8 @@ function renderTransfersComparison(data) {
   setHtml('diff-lcl', formatDiffBadge(diffLcl));
   setHtml('diff-rev', formatDiffBadge(diffRev));
   setHtml('diff-grand-total', formatDiffBadge(diffGrand));
+  setEl('transfer-lcl-subtotal', `Package Logement (${formatCurrency(data.lclTotal)})`);
+  setEl('transfer-rev-subtotal', `Vie Courante Foyer (${formatCurrency(data.revolutTotal || data.revolutBudgetTotal)})`);
 }
 
 function renderSummaryStrip(data) {
@@ -1495,6 +1529,8 @@ function renderAll() {
   renderSummaryStrip(data);
   renderLclVsRevolutDonut(data.lclTotal, data.revolutBudgetTotal);
   renderSimulatorView(data);
+  updateDashboardCoupleCards(data);
+  renderTransfersComparison(data);
   renderLclTab(data);
   renderRevolutTab(data);
   renderRecentExpensesTable();
@@ -1801,23 +1837,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const env = (appState.revolutEnvelopes || []).find(x => x.id === envId);
       if (env) {
         env.budget = val;
-        const row = e.target.closest('tr');
-        if (row) {
-          const half1 = row.querySelector('.env-half-p1');
-          const half2 = row.querySelector('.env-half-p2');
-          if (half1) half1.textContent = formatCurrency(val / 2);
-          if (half2) half2.textContent = formatCurrency(val / 2);
-        }
+        renderAll();
         saveStateDebounced();
-        const data = calculateBudgets(appState);
-        renderSummaryStrip(data);
-        renderLclVsRevolutDonut(data.lclTotal, data.revolutBudgetTotal);
-        const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-        setEl('rev-banner-total', formatCurrency(data.revolutBudgetTotal));
-        setEl('rev-banner-annual', `${formatCurrency(data.revolutBudgetTotal * 12)} / an`);
-        setEl('revolut-envelopes-total-display', formatCurrency(data.revolutBudgetTotal));
-        setEl('revolut-envelopes-p1-total', formatCurrency(data.revolutBudgetTotal / 2));
-        setEl('revolut-envelopes-p2-total', formatCurrency(data.revolutBudgetTotal / 2));
       }
     }
     if (e.target.classList.contains('input-lot-budget')) {

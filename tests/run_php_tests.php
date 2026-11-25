@@ -144,6 +144,22 @@ $budgetsCustomRev = BudgetEngine::calculate($stateCustomRev);
 MiniAssert::floatNear(1155.00 * 0.60, $budgetsCustomRev['split']['p1Rev'], 0.01, 'Axel Revolut share at 60%');
 MiniAssert::floatNear(1155.00 * 0.40, $budgetsCustomRev['split']['p2Rev'], 0.01, 'Ariane Revolut share at 40%');
 
+// Combined LCL 70/30 & Revolut 60/40 Split Test with Loan Compensation
+$stateCombined = $defaultState;
+$stateCombined['lclSplit'] = ['mode' => 'custom', 'p1Percent' => 70, 'p2Percent' => 30];
+$stateCombined['revolutSplit'] = ['mode' => 'custom', 'p1Percent' => 60, 'p2Percent' => 40];
+$budgetsCombined = BudgetEngine::calculate($stateCombined);
+
+$expectedGlobal = $budgetsCombined['globalMonthlyBudget'];
+$sumPartnerTotals = $budgetsCombined['p1Contrib']['total'] + $budgetsCombined['p2Contrib']['total'];
+MiniAssert::floatNear($expectedGlobal, $sumPartnerTotals, 0.01, 'Combined splits: Axel + Ariane === Global Monthly Budget');
+MiniAssert::floatNear(1382.00, $budgetsCombined['p1Contrib']['lcl'] + $budgetsCombined['p2Contrib']['lcl'], 0.01, 'Combined splits: Axel LCL + Ariane LCL === Total LCL');
+MiniAssert::floatNear(1155.00, $budgetsCombined['p1Contrib']['rev'] + $budgetsCombined['p2Contrib']['rev'], 0.01, 'Combined splits: Axel Rev + Ariane Rev === Total Revolut');
+MiniAssert::floatNear(1036.84, $budgetsCombined['p1Contrib']['lcl'], 0.01, 'Axel LCL 70% + loan offset (+69.44)');
+MiniAssert::floatNear(345.16, $budgetsCombined['p2Contrib']['lcl'], 0.01, 'Ariane LCL 30% - loan offset (-69.44)');
+MiniAssert::floatNear(693.00, $budgetsCombined['p1Contrib']['rev'], 0.01, 'Axel Revolut 60%');
+MiniAssert::floatNear(462.00, $budgetsCombined['p2Contrib']['rev'], 0.01, 'Ariane Revolut 40%');
+
 // 4. Travaux 50 000 € Envelope Tests
 echo "\n▶ Travaux 50 000 € Envelope Tests:\n";
 $travaux = TravauxEngine::calculate($defaultState);
