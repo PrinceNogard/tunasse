@@ -94,4 +94,34 @@ class Format
     {
         return '"' . str_replace('"', '""', $str) . '"';
     }
+
+    /**
+     * Resolve the Central Hub URL (environment, host detection, or fallback)
+     */
+    public static function hubUrl(): string
+    {
+        $env = getenv('HUB_URL') ?: ($_SERVER['HUB_URL'] ?? ($_ENV['HUB_URL'] ?? null));
+        if (!empty($env) && is_string($env)) {
+            return trim($env);
+        }
+
+        $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? '');
+        if (!empty($host) && is_string($host)) {
+            $hostname = strtolower(explode(':', explode(',', $host)[0])[0]);
+            if ($hostname !== 'localhost' && $hostname !== '127.0.0.1' && $hostname !== '::1') {
+                $proto = (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && in_array(strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']), ['https', 'http'], true))
+                    ? strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'])
+                    : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http');
+                if (str_ends_with($hostname, '.sslip.io')) {
+                    if (preg_match('/(?:^|\.)(\d{1,3}(?:\.\d{1,3}){3}\.sslip\.io)$/', $hostname, $m)) {
+                        return "{$proto}://{$m[1]}/";
+                    }
+                    return "{$proto}://{$hostname}/";
+                }
+                return "{$proto}://{$hostname}/";
+            }
+        }
+
+        return 'https://62.210.136.111.sslip.io/';
+    }
 }

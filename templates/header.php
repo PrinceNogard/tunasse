@@ -1,8 +1,10 @@
 <?php
 /** @var array $state */
 /** @var array $budgets */
+use Tunasse\Utils\Format;
 $p1 = $state['profiles'][0] ?? ['name' => 'Axel', 'initials' => 'AX', 'color' => '#0ea5e9'];
 $p2 = $state['profiles'][1] ?? ['name' => 'Ariane', 'initials' => 'AR', 'color' => '#8b5cf6'];
+$hubUrl = Format::hubUrl();
 ?>
     <!-- APP HEADER -->
     <header class="app-header">
@@ -42,6 +44,15 @@ $p2 = $state['profiles'][1] ?? ['name' => 'Ariane', 'initials' => 'AR', 'color' 
       </nav>
 
       <div class="header-actions">
+        <a href="<?= htmlspecialchars($hubUrl) ?>" class="btn btn-secondary btn-sm btn-hub" id="btn-hub-link" title="Rejoindre le Hub central des services" target="_blank" rel="noopener noreferrer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span>Hub</span>
+        </a>
         <a href="api.php?action=export_json" class="btn btn-secondary btn-sm" id="btn-export-data" title="Sauvegarder les données en JSON">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export

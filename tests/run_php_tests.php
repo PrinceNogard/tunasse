@@ -59,6 +59,7 @@ MiniAssert::same('-69,44 €', Format::currency(-69.44), 'Format::currency negat
 MiniAssert::same('15/10/2026', Format::dateFR('2026-10-15'), 'Format::dateFR standard ISO');
 MiniAssert::same('', Format::dateFR(null), 'Format::dateFR null');
 MiniAssert::same('"Hello ""World"""', Format::sanitizeCsvCell('Hello "World"'), 'Format::sanitizeCsvCell quotes escaping');
+MiniAssert::true(str_starts_with(Format::hubUrl(), 'http'), 'Format::hubUrl returns valid HTTP(S) URL');
 
 // 2. Loan Calculations
 echo "\n▶ Loan Calculator Tests:\n";
